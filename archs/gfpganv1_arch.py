@@ -30,7 +30,7 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
                  num_style_feat=512,
                  num_mlp=8,
                  channel_multiplier=2,
-                 resample_kernel=[1, 3, 3, 1],
+                 resample_kernel=(1, 3, 3, 1),
                  lr_mlp=0.01,
                  narrow=1,
                  sft_half=False):
@@ -231,7 +231,7 @@ class GFPGANv1(nn.Module):
             out_size,
             num_style_feat=512,
             channel_multiplier=1,
-            resample_kernel=[1, 3, 3, 1],
+            resample_kernel=(1, 3, 3, 1),
             decoder_load_path=None,
             fix_decoder=True,
             # for stylegan decoder
