@@ -12,8 +12,10 @@ from basicsr.losses.losses import r1_penalty
 from basicsr.metrics import calculate_metric
 from basicsr.models.base_model import BaseModel
 from basicsr.utils import get_root_logger, imwrite, tensor2img
+from basicsr.utils.registry import MODEL_REGISTRY
 
 
+@MODEL_REGISTRY.register()
 class GFPGANModel(BaseModel):
     """GFPGAN model for <Towards real-world blind face restoratin with generative facial prior>"""
 

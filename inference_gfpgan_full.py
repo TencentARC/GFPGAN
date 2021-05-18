@@ -1,6 +1,7 @@
 import argparse
 import cv2
 import glob
+import numpy as np
 import os
 import torch
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
@@ -55,6 +56,10 @@ def restoration(gfpgan, face_helper, img_path, save_root, has_aligned=False, onl
         save_restore_path = os.path.join(save_root, 'restored_faces', save_face_name)
         imwrite(restored_face, save_restore_path)
 
+        # save cmp image
+        cmp_img = np.concatenate((cropped_face, restored_face), axis=1)
+        imwrite(cmp_img, os.path.join(save_root, 'cmp', f'{basename}_{idx:02d}.png'))
+
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -99,4 +104,10 @@ if __name__ == '__main__':
     img_list = sorted(glob.glob(os.path.join(args.test_path, '*.[jp][pn]g')))
     for img_path in img_list:
         restoration(
-            gfpgan, face_helper, img_path, save_root, has_aligned=False, only_center_face=True, suffix=args.suffix)
+            gfpgan,
+            face_helper,
+            img_path,
+            save_root,
+            has_aligned=False,
+            only_center_face=args.only_center_face,
+            suffix=args.suffix)
