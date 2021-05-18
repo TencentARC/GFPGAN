@@ -25,5 +25,5 @@ jobs:
     - name: Lint
       run: |
         flake8 .
-        isort --check-only --diff basicsr/ options/ scripts/ tests/ inference/ setup.py
-        yapf -r -d basicsr/ options/ scripts/ tests/ inference/ setup.py
+        isort --check-only --diff data/ archs/ models/ train.py inference_gfpgan_full.py
+        yapf -r -d data/ archs/ models/ train.py inference_gfpgan_full.py

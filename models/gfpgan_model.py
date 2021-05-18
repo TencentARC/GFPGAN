@@ -202,16 +202,18 @@ class GFPGANModel(BaseModel):
         if 'gt' in data:
             self.gt = data['gt'].to(self.device)
 
-        import torchvision
-        if self.opt['rank'] == 0:
-            import os
-            os.makedirs('tmp/gt', exist_ok=True)
-            os.makedirs('tmp/lq', exist_ok=True)
-            print(self.idx)
-            torchvision.utils.save_image(
-                self.gt, f'tmp/gt/gt_{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
-            torchvision.utils.save_image(
-                self.lq, f'tmp/lq/lq{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+        # uncomment to check data
+        # import torchvision
+        # if self.opt['rank'] == 0:
+        #     import os
+        #     os.makedirs('tmp/gt', exist_ok=True)
+        #     os.makedirs('tmp/lq', exist_ok=True)
+        #     print(self.idx)
+        #     torchvision.utils.save_image(
+        #         self.gt, f'tmp/gt/gt_{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+        #     torchvision.utils.save_image(
+        #         self.lq, f'tmp/lq/lq{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+        #     self.idx = self.idx + 1
 
         if 'loc_left_eye' in data:
             # get facial component locations, shape (batch, 4)
