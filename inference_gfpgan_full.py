@@ -100,8 +100,7 @@ if __name__ == '__main__':
     face_helper = FaceRestoreHelper(
         upscale_factor=1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png')
 
-    # scan all the jpg and png images
-    img_list = sorted(glob.glob(os.path.join(args.test_path, '*.[jp][pn]g')))
+    img_list = sorted(glob.glob(os.path.join(args.test_path, '*')))
     for img_path in img_list:
         restoration(
             gfpgan,
