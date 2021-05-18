@@ -21,6 +21,7 @@ class GFPGANModel(BaseModel):
 
     def __init__(self, opt):
         super(GFPGANModel, self).__init__(opt)
+        self.idx = 0
 
         # define network
         self.net_g = build_network(opt['network_g'])
@@ -112,6 +113,9 @@ class GFPGANModel(BaseModel):
         else:
             self.cri_perceptual = None
 
+        # L1 loss used in pyramid loss, component style loss and identity loss
+        self.cri_l1 = build_loss(train_opt['L1_opt']).to(self.device)
+
         # gan loss (wgan)
         self.cri_gan = build_loss(train_opt['gan_opt']).to(self.device)
 
@@ -198,7 +202,18 @@ class GFPGANModel(BaseModel):
         if 'gt' in data:
             self.gt = data['gt'].to(self.device)
 
-        if self.use_facial_disc:
+        import torchvision
+        if self.opt['rank'] == 0:
+            import os
+            os.makedirs('tmp/gt', exist_ok=True)
+            os.makedirs('tmp/lq', exist_ok=True)
+            print(self.idx)
+            torchvision.utils.save_image(
+                self.gt, f'tmp/gt/gt_{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+            torchvision.utils.save_image(
+                self.lq, f'tmp/lq/lq{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+
+        if 'loc_left_eye' in data:
             # get facial component locations, shape (batch, 4)
             self.loc_left_eyes = data['loc_left_eye']
             self.loc_right_eyes = data['loc_right_eye']

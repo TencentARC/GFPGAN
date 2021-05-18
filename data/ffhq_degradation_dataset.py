@@ -27,7 +27,7 @@ class FFHQDegradationDataset(data.Dataset):
         self.gt_folder = opt['dataroot_gt']
         self.mean = opt['mean']
         self.std = opt['std']
-        self.out_size = opt['512']
+        self.out_size = opt['out_size']
 
         self.crop_components = opt.get('crop_components', False)  # facial components
         self.eye_enlarge_ratio = opt.get('eye_enlarge_ratio', 1)

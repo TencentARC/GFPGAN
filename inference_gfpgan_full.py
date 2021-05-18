@@ -7,8 +7,8 @@ import torch
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 from torchvision.transforms.functional import normalize
 
+from archs.gfpganv1_arch import GFPGANv1
 from basicsr.utils import img2tensor, imwrite, tensor2img
-from gfpganv1_arch import GFPGANv1
 
 
 def restoration(gfpgan, face_helper, img_path, save_root, has_aligned=False, only_center_face=True, suffix=None):
@@ -66,7 +66,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--upscale_factor', type=int, default=1)
-    parser.add_argument('--model_path', type=str, default='models/GFPGANv1.pth')
+    parser.add_argument('--model_path', type=str, default='experiments/pretrained_models/GFPGANv1.pth')
     parser.add_argument('--test_path', type=str, default='inputs')
     parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
     parser.add_argument('--only_center_face', action='store_true')
