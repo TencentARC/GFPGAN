@@ -1,5 +1,5 @@
 # general settings
-name: debug_train_GFPGANv1_512
+name: train_GFPGANv1_512
 model_type: GFPGANModel
 num_gpu: 4
 manual_seed: 0

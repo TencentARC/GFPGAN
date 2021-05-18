@@ -1,0 +1,10 @@
+facexlib
+lmdb
+numpy
+opencv-python
+pyyaml
+tb-nightly
+torch>=1.7
+torchvision
+tqdm
+yapf
