@@ -6,17 +6,17 @@
 
 GFPGAN is a blind face restoration algorithm towards real-world face images.
 
-> **GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior**
-> [Xintao Wang](https://xinntao.github.io/), [Yu Li](https://yu-li.github.io/), [Honglun Zhang](https://scholar.google.com/citations?hl=en&user=KjQLROoAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en)
-> Applied Research Center (ARC), Tencent PCG
+### GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior
+[Xintao Wang](https://xinntao.github.io/), [Yu Li](https://yu-li.github.io/), [Honglun Zhang](https://scholar.google.com/citations?hl=en&user=KjQLROoAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en)
+Applied Research Center (ARC), Tencent PCG
 
 #### BibTeX
 
     @InProceedings{wang2021gfpgan,
-    author = {Xintao Wang and Yu Li and Honglun Zhang and Ying Shan},
-    title = {Towards Real-World Blind Face Restoration with Generative Facial Prior},
-    booktitle={The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-    year = {2021}
+        author = {Xintao Wang and Yu Li and Honglun Zhang and Ying Shan},
+        title = {Towards Real-World Blind Face Restoration with Generative Facial Prior},
+        booktitle={The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+        year = {2021}
     }
 
 <p align="center">
