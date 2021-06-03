@@ -55,7 +55,7 @@ Blind face restoration usually relies on facial priors, such as facial geometry 
 
 ## :scroll: License and Acknowledgement
 
-TODO
+GFPGAN is realeased under Apache License Version 2.0.
 
 ## :e-mail: Contact
 
