@@ -67,9 +67,10 @@ if __name__ == '__main__':
 
     parser.add_argument('--upscale_factor', type=int, default=1)
     parser.add_argument('--model_path', type=str, default='experiments/pretrained_models/GFPGANv1.pth')
-    parser.add_argument('--test_path', type=str, default='inputs')
+    parser.add_argument('--test_path', type=str, default='inputs/whole_imgs')
     parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
     parser.add_argument('--only_center_face', action='store_true')
+    parser.add_argument('--aligned', action='store_true')
 
     args = parser.parse_args()
     if args.test_path.endswith('/'):
@@ -107,6 +108,8 @@ if __name__ == '__main__':
             face_helper,
             img_path,
             save_root,
-            has_aligned=False,
+            has_aligned=args.aligned,
             only_center_face=args.only_center_face,
             suffix=args.suffix)
+
+    print('Results are in the <results> folder.')
