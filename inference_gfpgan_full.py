@@ -11,7 +11,14 @@ from archs.gfpganv1_arch import GFPGANv1
 from basicsr.utils import img2tensor, imwrite, tensor2img
 
 
-def restoration(gfpgan, face_helper, img_path, save_root, has_aligned=False, only_center_face=True, suffix=None):
+def restoration(gfpgan,
+                face_helper,
+                img_path,
+                save_root,
+                has_aligned=False,
+                only_center_face=True,
+                suffix=None,
+                paste_back=False):
     # read image
     img_name = os.path.basename(img_path)
     print(f'Processing {img_name} ...')
@@ -60,6 +67,12 @@ def restoration(gfpgan, face_helper, img_path, save_root, has_aligned=False, onl
         cmp_img = np.concatenate((cropped_face, restored_face), axis=1)
         imwrite(cmp_img, os.path.join(save_root, 'cmp', f'{basename}_{idx:02d}.png'))
 
+    if not has_aligned and paste_back:
+        face_helper.get_inverse_affine(None)
+        save_restore_path = os.path.join(save_root, 'restored_imgs', img_name)
+        # paste each restored face to the input image
+        face_helper.paste_faces_to_input_image(save_restore_path)
+
 
 if __name__ == '__main__':
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -71,6 +84,7 @@ if __name__ == '__main__':
     parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
     parser.add_argument('--only_center_face', action='store_true')
     parser.add_argument('--aligned', action='store_true')
+    parser.add_argument('--paste_back', action='store_true')
 
     args = parser.parse_args()
     if args.test_path.endswith('/'):
@@ -110,6 +124,7 @@ if __name__ == '__main__':
             save_root,
             has_aligned=args.aligned,
             only_center_face=args.only_center_face,
-            suffix=args.suffix)
+            suffix=args.suffix,
+            paste_back=args.paste_back)
 
     print('Results are in the <results> folder.')
