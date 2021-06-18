@@ -9,9 +9,11 @@ datasets:
   train:
     name: FFHQ
     type: FFHQDegradationDataset
-    dataroot_gt: datasets/ffhq/ffhq_512.lmdb
+    # dataroot_gt: datasets/ffhq/ffhq_512.lmdb
+    dataroot_gt: datasets/ffhq/ffhq_512
     io_backend:
-      type: lmdb
+      # type: lmdb
+      type: disk
 
     use_hflip: true
     mean: [0.5, 0.5, 0.5]
@@ -44,10 +46,12 @@ datasets:
     prefetch_mode: ~
 
   val:
-    name: validation1020_512
+    # Please modify accordingly to use your own validation
+    # Or comment the val block if do not need validation during training
+    name: validation
     type: PairedImageDataset
-    dataroot_lq: datasets/faces/validation1020_512/input  # TODO: modify before release
-    dataroot_gt: datasets/faces/validation1020_512/input
+    dataroot_lq: datasets/faces/validation/input
+    dataroot_gt: datasets/faces/validation/reference
     io_backend:
       type: disk
     mean: [0.5, 0.5, 0.5]
