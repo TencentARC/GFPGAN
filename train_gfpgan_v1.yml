@@ -101,12 +101,13 @@ path:
   param_key_g: params_ema
   strict_load_g: ~
   pretrain_network_d: ~
-
-  resume_state: ~
   pretrain_network_d_left_eye: ~
   pretrain_network_d_right_eye: ~
   pretrain_network_d_mouth: ~
-  pretrain_network_arcface: experiments/pretrained_models/arcface_resnet18.pth
+  pretrain_network_identity: experiments/pretrained_models/arcface_resnet18.pth
+  # resume
+  resume_state: ~
+  ignore_resume_networks: ['network_identity']
 
 # training settings
 train:
@@ -141,7 +142,7 @@ train:
     reduction: mean
 
   # image pyramid loss
-  pyramid_loss_weight: 0
+  pyramid_loss_weight: 1
   remove_pyramid_loss: 50000
   # perceptual loss (content and style losses)
   perceptual_opt:
