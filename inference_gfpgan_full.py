@@ -113,7 +113,7 @@ if __name__ == '__main__':
 
     # initialize face helper
     face_helper = FaceRestoreHelper(
-        upscale_factor=1, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png')
+        args.upscale_factor, face_size=512, crop_ratio=(1, 1), det_model='retinaface_resnet50', save_ext='png')
 
     img_list = sorted(glob.glob(os.path.join(args.test_path, '*')))
     for img_path in img_list:
