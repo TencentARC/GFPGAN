@@ -6,9 +6,69 @@ import os
 import torch
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 from torchvision.transforms.functional import normalize
+from fastapi import UploadFile
 
 from archs.gfpganv1_arch import GFPGANv1
 from basicsr.utils import img2tensor, imwrite, tensor2img
+from PIL import Image
+
+
+def restoration_endpoint(gfpgan, 
+                    face_helper, 
+                    image: Image, 
+                    image_name = None,
+                    save_root = None, 
+                    has_aligned = False,
+                    only_center_face = False,
+                    suffix = None):
+    print(f'Processing {image_name} ...')
+    #input_img = cv2.imread(image.file, cv2.IMREAD_COLOR)
+    input_img = np.array(image)
+    face_helper.clean_all()
+
+    #Alignment
+    if has_aligned:
+        input_img = cv2.resize(input_img, (512, 512))
+        face_helper.cropped_faces = [input_img]
+    
+    else:
+        face_helper.read_image(input_img)
+        face_helper.get_face_landmarks_5(only_center_face=only_center_face, pad_blur = False)
+        face_helper.align_warp_face()
+
+    #Restoration
+    for idx, cropped_face in enumerate(face_helper.cropped_faces):
+        # prepare data
+        cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
+        normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
+        cropped_face_t = cropped_face_t.unsqueeze(0).to('cuda')
+
+        try:
+            with torch.no_grad():
+                output = gfpgan(cropped_face_t, return_rgb=False)[0]
+                # convert to image
+                restored_face = tensor2img(output.squeeze(0), rgb2bgr=True, min_max=(-1, 1))
+        except RuntimeError as error:
+            print(f'\tFailed inference for GFPGAN: {error}.')
+            restored_face = cropped_face
+
+        restored_face = restored_face.astype('uint8')
+        face_helper.add_restored_face(restored_face)
+
+        if suffix is not None:
+            save_face_name = f'{image.filename}_{idx:02d}_{suffix}.png'
+        else:
+            save_face_name = f'{image.filename}_{idx:02d}.png'
+       
+    #Combine the restored faces and the input_image
+    face_helper.get_inverse_affine(None)
+    # paste each restored face to the input image
+    upscaled_img = face_helper.paste_faces_to_input_image()
+
+    return upscaled_img
+
+
+
 
 
 def restoration(gfpgan,
