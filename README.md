@@ -5,30 +5,24 @@
 [![LICENSE](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TencentARC/GFPGAN/blob/master/LICENSE)
 [![python lint](https://github.com/TencentARC/GFPGAN/actions/workflows/pylint.yml/badge.svg)](https://github.com/TencentARC/GFPGAN/blob/master/.github/workflows/pylint.yml)
 
-[**Paper**](https://arxiv.org/abs/2101.04061) **|** [**Project Page**](https://xinntao.github.io/projects/gfpgan) &emsp;&emsp; [English](README.md) **|** [简体中文](README_CN.md)
+[**Paper**](https://arxiv.org/abs/2101.04061) **|** [**Project Page**](https://xinntao.github.io/projects/gfpgan)
 
-GFPGAN is a blind face restoration algorithm towards real-world face images.
+1. [Colab Demo](https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo) for GFPGAN <a href="https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>
+1. We provide a '*clean*' version of GFPGAN, which can run without CUDA extensions. So that it can run in Windows or on CPU mode.
 
-<a href="https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>
-[Colab Demo](https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo)
+GFPGAN aims at developing **Practical Algorithm for Real-world Face Restoration**.<br>
+It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g.*, StyleGAN2) for blind face restoration.
+
+:triangular_flag_on_post: **Updates**
+
+- :white_check_mark: We provide a *clean* version of GFPGAN, which does not require CUDA extensionts.
+- :white_check_mark: We provide an updated model without colorizing faces.
 
 ### :book: GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior
+
 > [[Paper](https://arxiv.org/abs/2101.04061)] &emsp; [[Project Page](https://xinntao.github.io/projects/gfpgan)] &emsp; [Demo] <br>
 > [Xintao Wang](https://xinntao.github.io/), [Yu Li](https://yu-li.github.io/), [Honglun Zhang](https://scholar.google.com/citations?hl=en&user=KjQLROoAAAAJ), [Ying Shan](https://scholar.google.com/citations?user=4oXBp9UAAAAJ&hl=en) <br>
 > Applied Research Center (ARC), Tencent PCG
-
-#### Abstract
-
-Blind face restoration usually relies on facial priors, such as facial geometry prior or reference prior, to restore realistic and faithful details. However, very low-quality inputs cannot offer accurate geometric prior while high-quality references are inaccessible, limiting the applicability in real-world scenarios. In this work, we propose GFP-GAN that leverages **rich and diverse priors encapsulated in a pretrained face GAN** for blind face restoration. This Generative Facial Prior (GFP) is incorporated into the face restoration process via novel channel-split spatial feature transform layers, which allow our method to achieve a good balance of realness and fidelity. Thanks to the powerful generative facial prior and delicate designs, our GFP-GAN could jointly restore facial details and enhance colors with just a single forward pass, while GAN inversion methods require expensive image-specific optimization at inference. Extensive experiments show that our method achieves superior performance to prior art on both synthetic and real-world datasets.
-
-#### BibTeX
-
-    @InProceedings{wang2021gfpgan,
-        author = {Xintao Wang and Yu Li and Honglun Zhang and Ying Shan},
-        title = {Towards Real-World Blind Face Restoration with Generative Facial Prior},
-        booktitle={The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
-        year = {2021}
-    }
 
 <p align="center">
   <img src="https://xinntao.github.io/projects/GFPGAN_src/gfpgan_teaser.jpg">
@@ -40,10 +34,13 @@ Blind face restoration usually relies on facial priors, such as facial geometry 
 
 - Python >= 3.7 (Recommend to use [Anaconda](https://www.anaconda.com/download/#linux) or [Miniconda](https://docs.conda.io/en/latest/miniconda.html))
 - [PyTorch >= 1.7](https://pytorch.org/)
-- NVIDIA GPU + [CUDA](https://developer.nvidia.com/cuda-downloads)
-- Linux (We have not tested on Windows)
+- Option: NVIDIA GPU + [CUDA](https://developer.nvidia.com/cuda-downloads)
+- Option: Linux (We have not tested on Windows)
 
 ### Installation
+
+We now provide a *clean* version of GFPGAN, which does not require customized CUDA extensions. <br>
+If you want want to use the original model in our paper, please see [PaperModel.md](Installation.md) for installation.
 
 1. Clone repo
 
@@ -53,11 +50,6 @@ Blind face restoration usually relies on facial priors, such as facial geometry 
     ```
 
 1. Install dependent packages
-
-    As StyleGAN2 uses customized PyTorch C++ extensions, you need to **compile them during installation** or **load then just-in-time(JIT)**.
-    You can refer to [BasicSR-INSTALL.md](https://github.com/xinntao/BasicSR/blob/master/INSTALL.md) for more details.
-
-    **Option 1: Load extensions just-in-time(JIT)** (For those just want to do simple inferences, may have less issues)
 
     ```bash
     # Install basicsr - https://github.com/xinntao/BasicSR
@@ -69,56 +61,41 @@ Blind face restoration usually relies on facial priors, such as facial geometry 
     pip install facexlib
 
     pip install -r requirements.txt
-
-    # remember to set BASICSR_JIT=True before your running commands
-    ```
-
-    **Option 2: Compile extensions during installation** (For those need to train/inference for many times)
-
-    ```bash
-    # Install basicsr - https://github.com/xinntao/BasicSR
-    # We use BasicSR for both training and inference
-    # Set BASICSR_EXT=True to compile the cuda extensions in the BasicSR - It may take several minutes to compile, please be patient
-    # Add -vvv for detailed log prints
-    BASICSR_EXT=True pip install basicsr -vvv
-
-    # Install facexlib - https://github.com/xinntao/facexlib
-    # We use face detection and face restoration helper in the facexlib package
-    pip install facexlib
-
-    pip install -r requirements.txt
     ```
 
 ## :zap: Quick Inference
 
-Download pre-trained models: [GFPGANv1.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth)
+Download pre-trained models: [GFPGANCleanv1-NoCE-C2.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth)
 
 ```bash
-wget https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth -P experiments/pretrained_models
+wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth -P experiments/pretrained_models
 ```
 
-- Option 1: Load extensions just-in-time(JIT)
+**Inference!**
 
-    ```bash
-    BASICSR_JIT=True python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs
+```bash
+python inference_gfpgan_full.py --upscale_factor 2 --test_path inputs/whole_imgs --save_root results
+```
 
-    # for aligned images
-    BASICSR_JIT=True python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --aligned
-    ```
+## :european_castle: Model Zoo
 
-- Option 2: Have successfully compiled extensions during installation
-
-    ```bash
-    python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs
-
-    # for aligned images
-    python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --aligned
-    ```
+- [GFPGANCleanv1-NoCE-C2.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth)
+- [GFPGANv1.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth)
 
 ## :computer: Training
 
-We provide complete training codes for GFPGAN. <br>
+We provide the training codes for GFPGAN (used in our paper). <br>
 You could improve it according to your own needs.
+
+Tips:
+
+1. More high quality faces can improve the restoration quality.
+2. You may need to perform some pre-processing, such as beauty makeup.
+
+
+**Procedures**:<br>
+
+(You can try a simple version that does not require face component landmarks.)
 
 1. Dataset preparation: [FFHQ](https://github.com/NVlabs/ffhq-dataset)
 
@@ -133,13 +110,18 @@ You could improve it according to your own needs.
 
 > python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 train.py -opt train_gfpgan_v1.yml --launcher pytorch
 
-or load extensions just-in-time(JIT)
-
-> BASICSR_JIT=True python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 train.py -opt train_gfpgan_v1.yml --launcher pytorch
-
 ## :scroll: License and Acknowledgement
 
-GFPGAN is realeased under Apache License Version 2.0.
+GFPGAN is released under Apache License Version 2.0.
+
+## BibTeX
+
+    @InProceedings{wang2021gfpgan,
+        author = {Xintao Wang and Yu Li and Honglun Zhang and Ying Shan},
+        title = {Towards Real-World Blind Face Restoration with Generative Facial Prior},
+        booktitle={The IEEE Conference on Computer Vision and Pattern Recognition (CVPR)},
+        year = {2021}
+    }
 
 ## :e-mail: Contact
 
