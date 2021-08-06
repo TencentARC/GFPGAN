@@ -1,4 +1,7 @@
 .vscode
+datasets/*
+experiments/*
+tb_logger/*
 
 # ignored files
 version.py

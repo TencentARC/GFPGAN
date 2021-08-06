@@ -8,6 +8,7 @@ from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 from torchvision.transforms.functional import normalize
 
 from archs.gfpganv1_arch import GFPGANv1
+from archs.gfpganv1_clean_arch import GFPGANv1Clean
 from basicsr.utils import img2tensor, imwrite, tensor2img
 
 
@@ -32,7 +33,7 @@ def restoration(gfpgan,
     else:
         face_helper.read_image(input_img)
         # get face landmarks for each face
-        face_helper.get_face_landmarks_5(only_center_face=only_center_face, pad_blur=False)
+        face_helper.get_face_landmarks_5(only_center_face=only_center_face)
         # align and warp each face
         save_crop_path = os.path.join(save_root, 'cropped_faces', img_name)
         face_helper.align_warp_face(save_crop_path)
@@ -79,32 +80,48 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--upscale_factor', type=int, default=1)
+    parser.add_argument('--arch', type=str, default='clean')
+    parser.add_argument('--channel', type=int, default=2)
     parser.add_argument('--model_path', type=str, default='experiments/pretrained_models/GFPGANv1.pth')
     parser.add_argument('--test_path', type=str, default='inputs/whole_imgs')
     parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
     parser.add_argument('--only_center_face', action='store_true')
     parser.add_argument('--aligned', action='store_true')
     parser.add_argument('--paste_back', action='store_true')
+    parser.add_argument('--save_root', type=str, default='results')
 
     args = parser.parse_args()
     if args.test_path.endswith('/'):
         args.test_path = args.test_path[:-1]
-    save_root = 'results/'
-    os.makedirs(save_root, exist_ok=True)
+    os.makedirs(args.save_root, exist_ok=True)
 
     # initialize the GFP-GAN
-    gfpgan = GFPGANv1(
-        out_size=512,
-        num_style_feat=512,
-        channel_multiplier=1,
-        decoder_load_path=None,
-        fix_decoder=True,
-        # for stylegan decoder
-        num_mlp=8,
-        input_is_latent=True,
-        different_w=True,
-        narrow=1,
-        sft_half=True)
+    if args.arch == 'clean':
+        gfpgan = GFPGANv1Clean(
+            out_size=512,
+            num_style_feat=512,
+            channel_multiplier=args.channel,
+            decoder_load_path=None,
+            fix_decoder=False,
+            # for stylegan decoder
+            num_mlp=8,
+            input_is_latent=True,
+            different_w=True,
+            narrow=1,
+            sft_half=True)
+    else:
+        gfpgan = GFPGANv1(
+            out_size=512,
+            num_style_feat=512,
+            channel_multiplier=args.channel,
+            decoder_load_path=None,
+            fix_decoder=True,
+            # for stylegan decoder
+            num_mlp=8,
+            input_is_latent=True,
+            different_w=True,
+            narrow=1,
+            sft_half=True)
 
     gfpgan.to(device)
     checkpoint = torch.load(args.model_path, map_location=lambda storage, loc: storage)
@@ -121,10 +138,10 @@ if __name__ == '__main__':
             gfpgan,
             face_helper,
             img_path,
-            save_root,
+            args.save_root,
             has_aligned=args.aligned,
             only_center_face=args.only_center_face,
             suffix=args.suffix,
             paste_back=args.paste_back)
 
-    print('Results are in the <results> folder.')
+    print(f'Results are in the [{args.save_root}] folder.')
