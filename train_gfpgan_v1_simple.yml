@@ -1,5 +1,5 @@
 # general settings
-name: train_GFPGANv1_512
+name: train_GFPGANv1_512_simple
 model_type: GFPGANModel
 num_gpu: 4
 manual_seed: 0
@@ -40,9 +40,9 @@ datasets:
     # gray_prob: 0.01
     # gt_gray: True
 
-    crop_components: true
-    component_path: experiments/pretrained_models/FFHQ_eye_mouth_landmarks_512.pth
-    eye_enlarge_ratio: 1.4
+    # crop_components: false
+    # component_path: experiments/pretrained_models/FFHQ_eye_mouth_landmarks_512.pth
+    # eye_enlarge_ratio: 1.4
 
     # data loader
     use_shuffle: true
@@ -86,14 +86,14 @@ network_d:
   channel_multiplier: 1
   resample_kernel: [1, 3, 3, 1]
 
-network_d_left_eye:
-  type: FacialComponentDiscriminator
+# network_d_left_eye:
+#   type: FacialComponentDiscriminator
 
-network_d_right_eye:
-  type: FacialComponentDiscriminator
+# network_d_right_eye:
+#   type: FacialComponentDiscriminator
 
-network_d_mouth:
-  type: FacialComponentDiscriminator
+# network_d_mouth:
+#   type: FacialComponentDiscriminator
 
 network_identity:
   type: ResNetArcFace
@@ -107,9 +107,9 @@ path:
   param_key_g: params_ema
   strict_load_g: ~
   pretrain_network_d: ~
-  pretrain_network_d_left_eye: ~
-  pretrain_network_d_right_eye: ~
-  pretrain_network_d_mouth: ~
+  # pretrain_network_d_left_eye: ~
+  # pretrain_network_d_right_eye: ~
+  # pretrain_network_d_mouth: ~
   pretrain_network_identity: experiments/pretrained_models/arcface_resnet18.pth
   # resume
   resume_state: ~
@@ -174,13 +174,13 @@ train:
   # r1 regularization for discriminator
   r1_reg_weight: 10
   # facial component loss
-  gan_component_opt:
-    type: GANLoss
-    gan_type: vanilla
-    real_label_val: 1.0
-    fake_label_val: 0.0
-    loss_weight: !!float 1
-  comp_style_weight: 200
+  # gan_component_opt:
+  #   type: GANLoss
+  #   gan_type: vanilla
+  #   real_label_val: 1.0
+  #   fake_label_val: 0.0
+  #   loss_weight: !!float 1
+  # comp_style_weight: 200
   # identity loss
   identity_weight: 10
 
