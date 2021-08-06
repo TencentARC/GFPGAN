@@ -5,10 +5,8 @@
 [![LICENSE](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TencentARC/GFPGAN/blob/master/LICENSE)
 [![python lint](https://github.com/TencentARC/GFPGAN/actions/workflows/pylint.yml/badge.svg)](https://github.com/TencentARC/GFPGAN/blob/master/.github/workflows/pylint.yml)
 
-[**Paper**](https://arxiv.org/abs/2101.04061) **|** [**Project Page**](https://xinntao.github.io/projects/gfpgan)
-
 1. [Colab Demo](https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo) for GFPGAN <a href="https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>
-1. We provide a '*clean*' version of GFPGAN, which can run without CUDA extensions. So that it can run in Windows or on CPU mode.
+1. We provide a *clean* version of GFPGAN, which can run without CUDA extensions. So that it can run in **Windows** or on **CPU mode**.
 
 GFPGAN aims at developing **Practical Algorithm for Real-world Face Restoration**.<br>
 It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g.*, StyleGAN2) for blind face restoration.
@@ -40,12 +38,12 @@ It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g
 ### Installation
 
 We now provide a *clean* version of GFPGAN, which does not require customized CUDA extensions. <br>
-If you want want to use the original model in our paper, please see [PaperModel.md](Installation.md) for installation.
+If you want want to use the original model in our paper, please see [PaperModel.md](PaperModel.md) for installation.
 
 1. Clone repo
 
     ```bash
-    git clone https://github.com/xinntao/GFPGAN.git
+    git clone https://github.com/TencentARC/GFPGAN.git
     cd GFPGAN
     ```
 
@@ -87,15 +85,15 @@ python inference_gfpgan_full.py --upscale_factor 2 --test_path inputs/whole_imgs
 We provide the training codes for GFPGAN (used in our paper). <br>
 You could improve it according to your own needs.
 
-Tips:
+**Tips**
 
 1. More high quality faces can improve the restoration quality.
 2. You may need to perform some pre-processing, such as beauty makeup.
 
 
-**Procedures**:<br>
+**Procedures**
 
-(You can try a simple version that does not require face component landmarks.)
+(You can try a simple version ( `train_gfpgan_v1_simple.yml`) that does not require face component landmarks.)
 
 1. Dataset preparation: [FFHQ](https://github.com/NVlabs/ffhq-dataset)
 
