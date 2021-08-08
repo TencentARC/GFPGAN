@@ -1,9 +1,11 @@
 # GFPGAN (CVPR 2021)
 
 [![download](https://img.shields.io/github/downloads/TencentARC/GFPGAN/total.svg)](https://github.com/TencentARC/GFPGAN/releases)
+[![PyPI](https://img.shields.io/pypi/v/gfpgan)](https://pypi.org/project/gfpgan/)
 [![Open issue](https://isitmaintained.com/badge/open/TencentARC/GFPGAN.svg)](https://github.com/TencentARC/GFPGAN/issues)
 [![LICENSE](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/TencentARC/GFPGAN/blob/master/LICENSE)
 [![python lint](https://github.com/TencentARC/GFPGAN/actions/workflows/pylint.yml/badge.svg)](https://github.com/TencentARC/GFPGAN/blob/master/.github/workflows/pylint.yml)
+[![Publish-pip](https://github.com/TencentARC/GFPGAN/actions/workflows/publish-pip.yml/badge.svg)](https://github.com/TencentARC/GFPGAN/blob/master/.github/workflows/publish-pip.yml)
 
 1. [Colab Demo](https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo) for GFPGAN <a href="https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>; (Another [Colab Demo](https://colab.research.google.com/drive/1Oa1WwKB4M4l1GmR7CtswDVgOCOeSLChA?usp=sharing) for the original paper model)
 1. We provide a *clean* version of GFPGAN, which can run without CUDA extensions. So that it can run in **Windows** or on **CPU mode**.
@@ -59,6 +61,7 @@ If you want want to use the original model in our paper, please see [PaperModel.
     pip install facexlib
 
     pip install -r requirements.txt
+    python setup.py develop
     ```
 
 ## :zap: Quick Inference
@@ -72,7 +75,7 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1
 **Inference!**
 
 ```bash
-python inference_gfpgan_full.py --upscale_factor 2 --test_path inputs/whole_imgs --save_root results
+python inference_gfpgan.py --upscale_factor 2 --test_path inputs/whole_imgs --save_root results
 ```
 
 ## :european_castle: Model Zoo
@@ -90,10 +93,9 @@ You could improve it according to your own needs.
 1. More high quality faces can improve the restoration quality.
 2. You may need to perform some pre-processing, such as beauty makeup.
 
-
 **Procedures**
 
-(You can try a simple version ( `train_gfpgan_v1_simple.yml`) that does not require face component landmarks.)
+(You can try a simple version ( `options/train_gfpgan_v1_simple.yml`) that does not require face component landmarks.)
 
 1. Dataset preparation: [FFHQ](https://github.com/NVlabs/ffhq-dataset)
 
@@ -102,11 +104,11 @@ You could improve it according to your own needs.
     1. [Component locations of FFHQ: FFHQ_eye_mouth_landmarks_512.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/FFHQ_eye_mouth_landmarks_512.pth)
     1. [A simple ArcFace model: arcface_resnet18.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/arcface_resnet18.pth)
 
-1. Modify the configuration file `train_gfpgan_v1.yml` accordingly.
+1. Modify the configuration file `options/train_gfpgan_v1.yml` accordingly.
 
 1. Training
 
-> python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 train.py -opt train_gfpgan_v1.yml --launcher pytorch
+> python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 gfpgan/train.py -opt options/train_gfpgan_v1.yml --launcher pytorch
 
 ## :scroll: License and Acknowledgement
 

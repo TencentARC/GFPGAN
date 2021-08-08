@@ -27,6 +27,7 @@ If you want want to use the original model in our paper, please follow the instr
     pip install facexlib
 
     pip install -r requirements.txt
+    python setup.py develop
 
     # remember to set BASICSR_JIT=True before your running commands
     ```
@@ -45,6 +46,7 @@ If you want want to use the original model in our paper, please follow the instr
     pip install facexlib
 
     pip install -r requirements.txt
+    python setup.py develop
     ```
 
 ## :zap: Quick Inference
@@ -58,17 +60,17 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth 
 - Option 1: Load extensions just-in-time(JIT)
 
     ```bash
-    BASICSR_JIT=True python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs --save_root results --arch original --channel 1
+    BASICSR_JIT=True python inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs --save_root results --arch original --channel 1
 
     # for aligned images
-    BASICSR_JIT=True python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --save_root results --arch original --channel 1 --aligned
+    BASICSR_JIT=True python inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --save_root results --arch original --channel 1 --aligned
     ```
 
 - Option 2: Have successfully compiled extensions during installation
 
     ```bash
-    python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs --save_root results --arch original --channel 1
+    python inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs --save_root results --arch original --channel 1
 
     # for aligned images
-    python inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --save_root results --arch original --channel 1 --aligned
+    python inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --save_root results --arch original --channel 1 --aligned
     ```

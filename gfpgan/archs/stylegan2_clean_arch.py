@@ -1,11 +1,10 @@
 import math
 import random
 import torch
-from torch import nn
-from torch.nn import functional as F
-
 from basicsr.archs.arch_util import default_init_weights
 from basicsr.utils.registry import ARCH_REGISTRY
+from torch import nn
+from torch.nn import functional as F
 
 
 class NormStyleCode(nn.Module):

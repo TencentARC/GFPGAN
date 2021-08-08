@@ -1,11 +1,6 @@
 import math
 import os.path as osp
 import torch
-from collections import OrderedDict
-from torch.nn import functional as F
-from torchvision.ops import roi_align
-from tqdm import tqdm
-
 from basicsr.archs import build_network
 from basicsr.losses import build_loss
 from basicsr.losses.losses import r1_penalty
@@ -13,6 +8,10 @@ from basicsr.metrics import calculate_metric
 from basicsr.models.base_model import BaseModel
 from basicsr.utils import get_root_logger, imwrite, tensor2img
 from basicsr.utils.registry import MODEL_REGISTRY
+from collections import OrderedDict
+from torch.nn import functional as F
+from torchvision.ops import roi_align
+from tqdm import tqdm
 
 
 @MODEL_REGISTRY.register()
