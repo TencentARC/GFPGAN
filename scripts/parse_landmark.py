@@ -2,9 +2,8 @@ import cv2
 import json
 import numpy as np
 import torch
-from collections import OrderedDict
-
 from basicsr.utils import FileClient, imfrombytes
+from collections import OrderedDict
 
 print('Load JSON metadata...')
 # use the json file in FFHQ dataset
