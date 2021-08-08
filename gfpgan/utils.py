@@ -1,214 +1,117 @@
 import cv2
-import math
-import numpy as np
 import os
 import torch
-from basicsr.archs.rrdbnet_arch import RRDBNet
+from basicsr.utils import img2tensor, tensor2img
+from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 from torch.hub import download_url_to_file, get_dir
-from torch.nn import functional as F
+from torchvision.transforms.functional import normalize
 from urllib.parse import urlparse
+
+from gfpgan.archs.gfpganv1_arch import GFPGANv1
+from gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
 
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-class RealESRGANer():
+class GFPGANer():
 
-    def __init__(self, scale, model_path, tile=0, tile_pad=10, pre_pad=10, half=False):
-        self.scale = scale
-        self.tile_size = tile
-        self.tile_pad = tile_pad
-        self.pre_pad = pre_pad
-        self.mod_scale = None
-        self.half = half
+    def __init__(self, model_path, upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=None):
+        self.upscale = upscale
+        self.bg_upsampler = bg_upsampler
 
         # initialize model
         self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-        model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=scale)
+        # initialize the GFP-GAN
+        if arch == 'clean':
+            self.gfpgan = GFPGANv1Clean(
+                out_size=512,
+                num_style_feat=512,
+                channel_multiplier=channel_multiplier,
+                decoder_load_path=None,
+                fix_decoder=False,
+                num_mlp=8,
+                input_is_latent=True,
+                different_w=True,
+                narrow=1,
+                sft_half=True)
+        else:
+            self.gfpgan = GFPGANv1(
+                out_size=512,
+                num_style_feat=512,
+                channel_multiplier=channel_multiplier,
+                decoder_load_path=None,
+                fix_decoder=True,
+                num_mlp=8,
+                input_is_latent=True,
+                different_w=True,
+                narrow=1,
+                sft_half=True)
+        # initialize face helper
+        self.face_helper = FaceRestoreHelper(
+            upscale,
+            face_size=512,
+            crop_ratio=(1, 1),
+            det_model='retinaface_resnet50',
+            save_ext='png',
+            device=self.device)
 
         if model_path.startswith('https://'):
-            model_path = load_file_from_url(
-                url=model_path, model_dir='realesrgan/weights', progress=True, file_name=None)
+            model_path = load_file_from_url(url=model_path, model_dir='gfpgan/weights', progress=True, file_name=None)
         loadnet = torch.load(model_path)
         if 'params_ema' in loadnet:
             keyname = 'params_ema'
         else:
             keyname = 'params'
-        model.load_state_dict(loadnet[keyname], strict=True)
-        model.eval()
-        self.model = model.to(self.device)
-        if self.half:
-            self.model = self.model.half()
-
-    def pre_process(self, img):
-        img = torch.from_numpy(np.transpose(img, (2, 0, 1))).float()
-        self.img = img.unsqueeze(0).to(self.device)
-        if self.half:
-            self.img = self.img.half()
-
-        # pre_pad
-        if self.pre_pad != 0:
-            self.img = F.pad(self.img, (0, self.pre_pad, 0, self.pre_pad), 'reflect')
-        # mod pad
-        if self.scale == 2:
-            self.mod_scale = 2
-        elif self.scale == 1:
-            self.mod_scale = 4
-        if self.mod_scale is not None:
-            self.mod_pad_h, self.mod_pad_w = 0, 0
-            _, _, h, w = self.img.size()
-            if (h % self.mod_scale != 0):
-                self.mod_pad_h = (self.mod_scale - h % self.mod_scale)
-            if (w % self.mod_scale != 0):
-                self.mod_pad_w = (self.mod_scale - w % self.mod_scale)
-            self.img = F.pad(self.img, (0, self.mod_pad_w, 0, self.mod_pad_h), 'reflect')
-
-    def process(self):
-        self.output = self.model(self.img)
-
-    def tile_process(self):
-        """Modified from: https://github.com/ata4/esrgan-launcher
-        """
-        batch, channel, height, width = self.img.shape
-        output_height = height * self.scale
-        output_width = width * self.scale
-        output_shape = (batch, channel, output_height, output_width)
-
-        # start with black image
-        self.output = self.img.new_zeros(output_shape)
-        tiles_x = math.ceil(width / self.tile_size)
-        tiles_y = math.ceil(height / self.tile_size)
-
-        # loop over all tiles
-        for y in range(tiles_y):
-            for x in range(tiles_x):
-                # extract tile from input image
-                ofs_x = x * self.tile_size
-                ofs_y = y * self.tile_size
-                # input tile area on total image
-                input_start_x = ofs_x
-                input_end_x = min(ofs_x + self.tile_size, width)
-                input_start_y = ofs_y
-                input_end_y = min(ofs_y + self.tile_size, height)
-
-                # input tile area on total image with padding
-                input_start_x_pad = max(input_start_x - self.tile_pad, 0)
-                input_end_x_pad = min(input_end_x + self.tile_pad, width)
-                input_start_y_pad = max(input_start_y - self.tile_pad, 0)
-                input_end_y_pad = min(input_end_y + self.tile_pad, height)
-
-                # input tile dimensions
-                input_tile_width = input_end_x - input_start_x
-                input_tile_height = input_end_y - input_start_y
-                tile_idx = y * tiles_x + x + 1
-                input_tile = self.img[:, :, input_start_y_pad:input_end_y_pad, input_start_x_pad:input_end_x_pad]
-
-                # upscale tile
-                try:
-                    with torch.no_grad():
-                        output_tile = self.model(input_tile)
-                except Exception as error:
-                    print('Error', error)
-                print(f'\tTile {tile_idx}/{tiles_x * tiles_y}')
-
-                # output tile area on total image
-                output_start_x = input_start_x * self.scale
-                output_end_x = input_end_x * self.scale
-                output_start_y = input_start_y * self.scale
-                output_end_y = input_end_y * self.scale
-
-                # output tile area without padding
-                output_start_x_tile = (input_start_x - input_start_x_pad) * self.scale
-                output_end_x_tile = output_start_x_tile + input_tile_width * self.scale
-                output_start_y_tile = (input_start_y - input_start_y_pad) * self.scale
-                output_end_y_tile = output_start_y_tile + input_tile_height * self.scale
-
-                # put tile into output image
-                self.output[:, :, output_start_y:output_end_y,
-                            output_start_x:output_end_x] = output_tile[:, :, output_start_y_tile:output_end_y_tile,
-                                                                       output_start_x_tile:output_end_x_tile]
-
-    def post_process(self):
-        # remove extra pad
-        if self.mod_scale is not None:
-            _, _, h, w = self.output.size()
-            self.output = self.output[:, :, 0:h - self.mod_pad_h * self.scale, 0:w - self.mod_pad_w * self.scale]
-        # remove prepad
-        if self.pre_pad != 0:
-            _, _, h, w = self.output.size()
-            self.output = self.output[:, :, 0:h - self.pre_pad * self.scale, 0:w - self.pre_pad * self.scale]
-        return self.output
+        self.gfpgan.load_state_dict(loadnet[keyname], strict=True)
+        self.gfpgan.eval()
+        self.gfpgan = self.gfpgan.to(self.device)
 
     @torch.no_grad()
-    def enhance(self, img, outscale=None, alpha_upsampler='realesrgan'):
-        h_input, w_input = img.shape[0:2]
-        # img: numpy
-        img = img.astype(np.float32)
-        if np.max(img) > 255:  # 16-bit image
-            max_range = 65535
-            print('\tInput is a 16-bit image')
-        else:
-            max_range = 255
-        img = img / max_range
-        if len(img.shape) == 2:  # gray image
-            img_mode = 'L'
-            img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)
-        elif img.shape[2] == 4:  # RGBA image with alpha channel
-            img_mode = 'RGBA'
-            alpha = img[:, :, 3]
-            img = img[:, :, 0:3]
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-            if alpha_upsampler == 'realesrgan':
-                alpha = cv2.cvtColor(alpha, cv2.COLOR_GRAY2RGB)
-        else:
-            img_mode = 'RGB'
-            img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    def enhance(self, img, has_aligned=False, only_center_face=False, paste_back=True):
+        self.face_helper.clean_all()
 
-        # ------------------- process image (without the alpha channel) ------------------- #
-        self.pre_process(img)
-        if self.tile_size > 0:
-            self.tile_process()
+        if has_aligned:
+            img = cv2.resize(img, (512, 512))
+            self.face_helper.cropped_faces = [img]
         else:
-            self.process()
-        output_img = self.post_process()
-        output_img = output_img.data.squeeze().float().cpu().clamp_(0, 1).numpy()
-        output_img = np.transpose(output_img[[2, 1, 0], :, :], (1, 2, 0))
-        if img_mode == 'L':
-            output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2GRAY)
+            self.face_helper.read_image(img)
+            # get face landmarks for each face
+            self.face_helper.get_face_landmarks_5(only_center_face=only_center_face)
+            # align and warp each face
+            self.face_helper.align_warp_face()
 
-        # ------------------- process the alpha channel if necessary ------------------- #
-        if img_mode == 'RGBA':
-            if alpha_upsampler == 'realesrgan':
-                self.pre_process(alpha)
-                if self.tile_size > 0:
-                    self.tile_process()
-                else:
-                    self.process()
-                output_alpha = self.post_process()
-                output_alpha = output_alpha.data.squeeze().float().cpu().clamp_(0, 1).numpy()
-                output_alpha = np.transpose(output_alpha[[2, 1, 0], :, :], (1, 2, 0))
-                output_alpha = cv2.cvtColor(output_alpha, cv2.COLOR_BGR2GRAY)
+        # face restoration
+        for cropped_face in self.face_helper.cropped_faces:
+            # prepare data
+            cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
+            normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
+            cropped_face_t = cropped_face_t.unsqueeze(0).to(self.device)
+
+            try:
+                output = self.gfpgan(cropped_face_t, return_rgb=False)[0]
+                # convert to image
+                restored_face = tensor2img(output.squeeze(0), rgb2bgr=True, min_max=(-1, 1))
+            except RuntimeError as error:
+                print(f'\tFailed inference for GFPGAN: {error}.')
+                restored_face = cropped_face
+
+            restored_face = restored_face.astype('uint8')
+            self.face_helper.add_restored_face(restored_face)
+
+        if not has_aligned and paste_back:
+
+            if self.bg_upsampler is not None:
+                # Now only support RealESRGAN
+                bg_img = self.bg_upsampler.enhance(img, outscale=self.upscale)[0]
             else:
-                h, w = alpha.shape[0:2]
-                output_alpha = cv2.resize(alpha, (w * self.scale, h * self.scale), interpolation=cv2.INTER_LINEAR)
+                bg_img = None
 
-            # merge the alpha channel
-            output_img = cv2.cvtColor(output_img, cv2.COLOR_BGR2BGRA)
-            output_img[:, :, 3] = output_alpha
-
-        # ------------------------------ return ------------------------------ #
-        if max_range == 65535:  # 16-bit image
-            output = (output_img * 65535.0).round().astype(np.uint16)
+            self.face_helper.get_inverse_affine(None)
+            # paste each restored face to the input image
+            restored_img = self.face_helper.paste_faces_to_input_image(upsample_img=bg_img)
+            return self.face_helper.cropped_faces, self.face_helper.restored_faces, restored_img
         else:
-            output = (output_img * 255.0).round().astype(np.uint8)
-
-        if outscale is not None and outscale != float(self.scale):
-            output = cv2.resize(
-                output, (
-                    int(w_input * outscale),
-                    int(h_input * outscale),
-                ), interpolation=cv2.INTER_LANCZOS4)
-
-        return output, img_mode
+            return self.face_helper.cropped_faces, self.face_helper.restored_faces, None
 
 
 def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
