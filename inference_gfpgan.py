@@ -4,18 +4,19 @@ import glob
 import numpy as np
 import os
 import torch
+from basicsr.utils import img2tensor, imwrite, tensor2img
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
 from torchvision.transforms.functional import normalize
 
-from archs.gfpganv1_arch import GFPGANv1
-from archs.gfpganv1_clean_arch import GFPGANv1Clean
-from basicsr.utils import img2tensor, imwrite, tensor2img
+from gfpgan.archs.gfpganv1_arch import GFPGANv1
+from gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
 
 
 def restoration(gfpgan,
                 face_helper,
                 img_path,
                 save_root,
+                upscale_factor=2,
                 has_aligned=False,
                 only_center_face=True,
                 suffix=None,
@@ -70,10 +71,25 @@ def restoration(gfpgan,
         imwrite(cmp_img, os.path.join(save_root, 'cmp', f'{basename}_{idx:02d}.png'))
 
     if not has_aligned and paste_back:
+        from realesrgan import RealESRGANer
+        upsampler = RealESRGANer(
+            scale=2,
+            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+            tile=0,
+            tile_pad=10,
+            pre_pad=0,
+            half=True)
+        bg_img = upsampler.enhance(input_img, outscale=upscale_factor)[0]
+
         face_helper.get_inverse_affine(None)
-        save_restore_path = os.path.join(save_root, 'restored_imgs', img_name)
+
+        if suffix is not None:
+            basename, ext = os.path.splitext(img_name)
+            save_restore_path = os.path.join(save_root, 'restored_imgs', f'{basename}_{suffix}{ext}')
+        else:
+            save_restore_path = os.path.join(save_root, 'restored_imgs', img_name)
         # paste each restored face to the input image
-        face_helper.paste_faces_to_input_image(save_restore_path)
+        face_helper.paste_faces_to_input_image(save_restore_path, upsample_img=bg_img)
 
 
 if __name__ == '__main__':
@@ -148,6 +164,7 @@ if __name__ == '__main__':
             only_center_face=args.only_center_face,
             suffix=args.suffix,
             paste_back=args.paste_back,
+            upscale_factor=args.upscale_factor,
             device=device)
 
     print(f'Results are in the [{args.save_root}] folder.')

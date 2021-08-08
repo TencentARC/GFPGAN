@@ -1,0 +1,30 @@
+name: PyPI Publish
+
+on: push
+
+jobs:
+  build-n-publish:
+    runs-on: ubuntu-latest
+    if: startsWith(github.event.ref, 'refs/tags')
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.8
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Upgrade pip
+        run: pip install pip --upgrade
+      - name: Install PyTorch (cpu)
+        run: pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Build and install
+        run: rm -rf .eggs && pip install -e .
+      - name: Build for distribution
+        # remove bdist_wheel for pip installation with compiling cuda extensions
+        run: python setup.py sdist
+      - name: Publish distribution to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}

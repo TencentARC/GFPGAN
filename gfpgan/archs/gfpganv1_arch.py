@@ -1,13 +1,12 @@
 import math
 import random
 import torch
-from torch import nn
-from torch.nn import functional as F
-
 from basicsr.archs.stylegan2_arch import (ConvLayer, EqualConv2d, EqualLinear, ResBlock, ScaledLeakyReLU,
                                           StyleGAN2Generator)
 from basicsr.ops.fused_act import FusedLeakyReLU
 from basicsr.utils.registry import ARCH_REGISTRY
+from torch import nn
+from torch.nn import functional as F
 
 
 class StyleGAN2GeneratorSFT(StyleGAN2Generator):
