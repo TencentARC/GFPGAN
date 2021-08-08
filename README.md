@@ -15,8 +15,14 @@ It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g
 
 :triangular_flag_on_post: **Updates**
 
+- :white_check_mark: Support enhancing non-face regions (background) with [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).
 - :white_check_mark: We provide a *clean* version of GFPGAN, which does not require CUDA extensions.
 - :white_check_mark: We provide an updated model without colorizing faces.
+
+---
+If GFPGAN is helpful in your photos/projects, please help to :star: this repo. Thanks:blush: <br>
+Other recommended projects: [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) &emsp; [BasicSR](https://github.com/xinntao/BasicSR) &emsp; [facexlib](https://github.com/xinntao/facexlib)
+---
 
 ### :book: GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior
 
@@ -62,6 +68,10 @@ If you want want to use the original model in our paper, please see [PaperModel.
 
     pip install -r requirements.txt
     python setup.py develop
+
+    # If you want to enhance the background (non-face) regions with Real-ESRGAN,
+    # you also need to install the realesrgan package
+    pip install realesrgan
     ```
 
 ## :zap: Quick Inference
