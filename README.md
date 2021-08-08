@@ -19,9 +19,8 @@ It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g
 - :white_check_mark: We provide a *clean* version of GFPGAN, which does not require CUDA extensions.
 - :white_check_mark: We provide an updated model without colorizing faces.
 
-
 If GFPGAN is helpful in your photos/projects, please help to :star: this repo. Thanks:blush: <br>
-Other recommended projects: &emsp; :arrow_forward:[Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) &emsp; :arrow_forward:[BasicSR](https://github.com/xinntao/BasicSR) &emsp; :arrow_forward:[facexlib](https://github.com/xinntao/facexlib)
+Other recommended projects: &emsp; :arrow_forward: [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) &emsp; :arrow_forward: [BasicSR](https://github.com/xinntao/BasicSR) &emsp; :arrow_forward: [facexlib](https://github.com/xinntao/facexlib)
 
 ---
 
