@@ -20,8 +20,10 @@ It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g
 - :white_check_mark: We provide an updated model without colorizing faces.
 
 ---
+
 If GFPGAN is helpful in your photos/projects, please help to :star: this repo. Thanks:blush: <br>
 Other recommended projects: [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) &emsp; [BasicSR](https://github.com/xinntao/BasicSR) &emsp; [facexlib](https://github.com/xinntao/facexlib)
+
 ---
 
 ### :book: GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior
