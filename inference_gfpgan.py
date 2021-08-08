@@ -3,6 +3,7 @@ import cv2
 import glob
 import numpy as np
 import os
+import torch
 from basicsr.utils import imwrite
 
 from gfpgan import GFPGANer
@@ -16,6 +17,7 @@ def main():
     parser.add_argument('--channel', type=int, default=2)
     parser.add_argument('--model_path', type=str, default='experiments/pretrained_models/GFPGANCleanv1-NoCE-C2.pth')
     parser.add_argument('--bg_upsampler', type=str, default='realesrgan')
+    parser.add_argument('--bg_tile', type=int, default=0)
     parser.add_argument('--test_path', type=str, default='inputs/whole_imgs')
     parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
     parser.add_argument('--only_center_face', action='store_true')
@@ -30,14 +32,20 @@ def main():
 
     # background upsampler
     if args.bg_upsampler == 'realesrgan':
-        from realesrgan import RealESRGANer
-        bg_upsampler = RealESRGANer(
-            scale=2,
-            model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
-            tile=0,
-            tile_pad=10,
-            pre_pad=0,
-            half=True)
+        if not torch.cuda.is_available():  # CPU
+            import warnings
+            warnings.warn('The unoptimized RealESRGAN is very slow on CPU. We do not use it. '
+                          'If you really want to use it, please modify the corresponding codes.')
+            bg_upsampler = None
+        else:
+            from realesrgan import RealESRGANer
+            bg_upsampler = RealESRGANer(
+                scale=2,
+                model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+                tile=args.bg_tile,
+                tile_pad=10,
+                pre_pad=0,
+                half=True)  # need to set False in CPU mode
     else:
         bg_upsampler = None
     # set up GFPGAN restorer
@@ -55,11 +63,12 @@ def main():
         print(f'Processing {img_name} ...')
         basename, ext = os.path.splitext(img_name)
         input_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+
         cropped_faces, restored_faces, restored_img = restorer.enhance(
             input_img, has_aligned=args.aligned, only_center_face=args.only_center_face, paste_back=args.paste_back)
 
         # save faces
-        for idx, cropped_face, restored_face in enumerate(zip(cropped_faces, restored_faces)):
+        for idx, (cropped_face, restored_face) in enumerate(zip(cropped_faces, restored_faces)):
             # save cropped face
             save_crop_path = os.path.join(args.save_root, 'cropped_faces', f'{basename}_{idx:02d}.png')
             imwrite(restored_face, save_crop_path)
