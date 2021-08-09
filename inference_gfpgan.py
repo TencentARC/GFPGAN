@@ -71,7 +71,7 @@ def main():
         for idx, (cropped_face, restored_face) in enumerate(zip(cropped_faces, restored_faces)):
             # save cropped face
             save_crop_path = os.path.join(args.save_root, 'cropped_faces', f'{basename}_{idx:02d}.png')
-            imwrite(restored_face, save_crop_path)
+            imwrite(cropped_face, save_crop_path)
             # save restored face
             if args.suffix is not None:
                 save_face_name = f'{basename}_{idx:02d}_{args.suffix}.png'
@@ -82,12 +82,14 @@ def main():
             # save cmp image
             cmp_img = np.concatenate((cropped_face, restored_face), axis=1)
             imwrite(cmp_img, os.path.join(args.save_root, 'cmp', f'{basename}_{idx:02d}.png'))
+
         # save restored img
-        if args.suffix is not None:
-            save_restore_path = os.path.join(args.save_root, 'restored_imgs', f'{basename}_{args.suffix}{ext}')
-        else:
-            save_restore_path = os.path.join(args.save_root, 'restored_imgs', img_name)
-        imwrite(restored_img, save_restore_path)
+        if restored_img is not None:
+            if args.suffix is not None:
+                save_restore_path = os.path.join(args.save_root, 'restored_imgs', f'{basename}_{args.suffix}{ext}')
+            else:
+                save_restore_path = os.path.join(args.save_root, 'restored_imgs', img_name)
+            imwrite(restored_img, save_restore_path)
 
     print(f'Results are in the [{args.save_root}] folder.')
 
