@@ -85,7 +85,7 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1
 **Inference!**
 
 ```bash
-python inference_gfpgan.py --upscale_factor 2 --test_path inputs/whole_imgs --save_root results
+python inference_gfpgan.py --upscale 2 --test_path inputs/whole_imgs --save_root results
 ```
 
 ## :european_castle: Model Zoo
