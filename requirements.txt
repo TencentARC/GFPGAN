@@ -1,11 +1,12 @@
+torch>=1.7
+numpy<1.21
+opencv-python
+torchvision
+scipy
+tqdm
 basicsr>=1.3.3.10
 facexlib>=0.2.0.2
 lmdb
-numpy
-opencv-python
 pyyaml
 tb-nightly
-torch>=1.7
-torchvision
-tqdm
 yapf
