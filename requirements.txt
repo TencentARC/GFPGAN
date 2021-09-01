@@ -4,8 +4,8 @@ opencv-python
 torchvision
 scipy
 tqdm
-basicsr>=1.3.3.10
-facexlib>=0.2.0.2
+basicsr>=1.3.4.0
+facexlib>=0.2.0.3
 lmdb
 pyyaml
 tb-nightly
