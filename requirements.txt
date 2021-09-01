@@ -1,5 +1,5 @@
 torch>=1.7
-numpy<1.21
+numpy<1.21  # numba requires numpy<1.21,>=1.17
 opencv-python
 torchvision
 scipy
