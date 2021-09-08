@@ -230,7 +230,7 @@ class GFPGANv1Clean(nn.Module):
             self.stylegan_decoder.load_state_dict(
                 torch.load(decoder_load_path, map_location=lambda storage, loc: storage)['params_ema'])
         if fix_decoder:
-            for name, param in self.stylegan_decoder.named_parameters():
+            for _, param in self.stylegan_decoder.named_parameters():
                 param.requires_grad = False
 
         # for SFT
