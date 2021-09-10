@@ -24,6 +24,12 @@ def main():
     parser.add_argument('--aligned', action='store_true')
     parser.add_argument('--paste_back', action='store_false')
     parser.add_argument('--save_root', type=str, default='results')
+    parser.add_argument(
+        '--ext',
+        type=str,
+        default='auto',
+        help='Image extension. Options: auto | jpg | png, auto means using the same extension as inputs')
+    args = parser.parse_args()
 
     args = parser.parse_args()
     if args.test_path.endswith('/'):
@@ -85,10 +91,16 @@ def main():
 
         # save restored img
         if restored_img is not None:
-            if args.suffix is not None:
-                save_restore_path = os.path.join(args.save_root, 'restored_imgs', f'{basename}_{args.suffix}{ext}')
+            if args.ext == 'auto':
+                extension = ext[1:]
             else:
-                save_restore_path = os.path.join(args.save_root, 'restored_imgs', img_name)
+                extension = args.ext
+
+            if args.suffix is not None:
+                save_restore_path = os.path.join(args.save_root, 'restored_imgs',
+                                                 f'{basename}_{args.suffix}.{extension}')
+            else:
+                save_restore_path = os.path.join(args.save_root, 'restored_imgs', f'{basename}.{extension}')
             imwrite(restored_img, save_restore_path)
 
     print(f'Results are in the [{args.save_root}] folder.')
