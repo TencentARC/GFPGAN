@@ -15,7 +15,7 @@ build:
     - "tqdm==4.62.2"
     - "yapf==0.31.0"
     - "tb-nightly==2.7.0a20210825"
-  pre_install:
+  run:
     - pip install facexlib==0.2.0.2
     - pip install realesrgan
 
