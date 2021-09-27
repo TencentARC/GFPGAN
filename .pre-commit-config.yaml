@@ -24,6 +24,12 @@ repos:
     hooks:
       - id: yapf
 
+  # codespell
+  - repo: https://github.com/codespell-project/codespell
+    rev: v2.1.0
+    hooks:
+      - id: codespell
+
   # pre-commit-hooks
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v3.2.0

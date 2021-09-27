@@ -20,10 +20,11 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 yapf isort
+        pip install codespell flake8 isort yapf
 
     - name: Lint
       run: |
+        codespell
         flake8 .
         isort --check-only --diff gfpgan/ scripts/ inference_gfpgan.py setup.py
         yapf -r -d gfpgan/ scripts/ inference_gfpgan.py setup.py
