@@ -20,7 +20,7 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
             StyleGAN2. Default: 2.
         resample_kernel (list[int]): A list indicating the 1D resample kernel
             magnitude. A cross production will be applied to extent 1D resample
-            kenrel to 2D resample kernel. Default: [1, 3, 3, 1].
+            kernel to 2D resample kernel. Default: [1, 3, 3, 1].
         lr_mlp (float): Learning rate multiplier for mlp layers. Default: 0.01.
     """
 
