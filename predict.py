@@ -78,54 +78,56 @@ class Predictor(cog.Predictor):
 
     @cog.input("image", type=Path, help="input image")
     def predict(self, image):
-        input_dir = self.args.test_path
+        try:
+            input_dir = self.args.test_path
 
-        input_path = os.path.join(input_dir, os.path.basename(image))
-        shutil.copy(str(image), input_path)
+            input_path = os.path.join(input_dir, os.path.basename(image))
+            shutil.copy(str(image), input_path)
 
-        os.makedirs(self.args.save_root, exist_ok=True)
+            os.makedirs(self.args.save_root, exist_ok=True)
 
-        img_list = sorted(glob.glob(os.path.join(input_dir, "*")))
+            img_list = sorted(glob.glob(os.path.join(input_dir, "*")))
 
-        out_path = Path(tempfile.mkdtemp()) / "output.png"
+            out_path = Path(tempfile.mkdtemp()) / "output.png"
 
-        for img_path in img_list:
-            # read image
-            img_name = os.path.basename(img_path)
-            print(f"Processing {img_name} ...")
-            basename, ext = os.path.splitext(img_name)
-            input_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+            for img_path in img_list:
+                # read image
+                img_name = os.path.basename(img_path)
+                print(f"Processing {img_name} ...")
+                basename, ext = os.path.splitext(img_name)
+                input_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
 
-            cropped_faces, restored_faces, restored_img = self.restorer.enhance(
-                input_img,
-                has_aligned=self.args.aligned,
-                only_center_face=self.args.only_center_face,
-                paste_back=self.args.paste_back,
-            )
-
-            imwrite(restored_img, str(out_path))
-            clean_folder(self.args.test_path)
-
-            # save faces
-            for idx, (cropped_face, restored_face) in enumerate(
-                zip(cropped_faces, restored_faces)
-            ):
-                # save cropped face
-                save_crop_path = os.path.join(
-                    self.args.save_root, "cropped_faces", f"{basename}_{idx:02d}.png"
+                cropped_faces, restored_faces, restored_img = self.restorer.enhance(
+                    input_img,
+                    has_aligned=self.args.aligned,
+                    only_center_face=self.args.only_center_face,
+                    paste_back=self.args.paste_back,
                 )
-                imwrite(cropped_face, save_crop_path)
-                # save restored face
-                if self.args.suffix is not None:
-                    save_face_name = f"{basename}_{idx:02d}_{self.args.suffix}.png"
-                else:
-                    save_face_name = f"{basename}_{idx:02d}.png"
-                save_restore_path = os.path.join(
-                    self.args.save_root, "restored_faces", save_face_name
-                )
-                imwrite(restored_face, save_restore_path)
+
                 imwrite(restored_img, str(out_path))
                 clean_folder(self.args.test_path)
+
+                # save faces
+                for idx, (cropped_face, restored_face) in enumerate(
+                    zip(cropped_faces, restored_faces)
+                ):
+                    # save cropped face
+                    save_crop_path = os.path.join(
+                        self.args.save_root, "cropped_faces", f"{basename}_{idx:02d}.png"
+                    )
+                    imwrite(cropped_face, save_crop_path)
+                    # save restored face
+                    if self.args.suffix is not None:
+                        save_face_name = f"{basename}_{idx:02d}_{self.args.suffix}.png"
+                    else:
+                        save_face_name = f"{basename}_{idx:02d}.png"
+                    save_restore_path = os.path.join(
+                        self.args.save_root, "restored_faces", save_face_name
+                    )
+                    imwrite(restored_face, save_restore_path)
+                    imwrite(restored_img, str(out_path))
+        finally:
+            clean_folder(self.args.test_path)
 
         return out_path
 
