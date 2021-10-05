@@ -102,6 +102,8 @@ If you want want to use the original model in our paper, please see [PaperModel.
 - [GFPGANCleanv1-NoCE-C2.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth): No colorization; no CUDA extensions are required. It is still in training. Trained with more data with pre-processing.
 - [GFPGANv1.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth): The paper model, with colorization.
 
+You can find more models (such as the discriminators) here: [Google Drive](https://drive.google.com/drive/folders/17rLiFzcUMoQuhLnptDsKolegHWwJOnHu?usp=sharing), [Tencent Cloud 腾讯微云](https://share.weiyun.com/ShYoCCoc)
+
 ## :computer: Training
 
 We provide the training codes for GFPGAN (used in our paper). <br>
