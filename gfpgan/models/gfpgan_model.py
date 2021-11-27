@@ -16,11 +16,11 @@ from tqdm import tqdm
 
 @MODEL_REGISTRY.register()
 class GFPGANModel(BaseModel):
-    """GFPGAN model for <Towards real-world blind face restoratin with generative facial prior>"""
+    """The GFPGAN model for Towards real-world blind face restoratin with generative facial prior"""
 
     def __init__(self, opt):
         super(GFPGANModel, self).__init__(opt)
-        self.idx = 0
+        self.idx = 0  # it is used for saving data for check
 
         # define network
         self.net_g = build_network(opt['network_g'])
@@ -51,8 +51,7 @@ class GFPGANModel(BaseModel):
             self.load_network(self.net_d, load_path, self.opt['path'].get('strict_load_d', True))
 
         # ----------- define net_g with Exponential Moving Average (EMA) ----------- #
-        # net_g_ema only used for testing on one GPU and saving
-        # There is no need to wrap with DistributedDataParallel
+        # net_g_ema only used for testing on one GPU and saving. There is no need to wrap with DistributedDataParallel
         self.net_g_ema = build_network(self.opt['network_g']).to(self.device)
         # load pretrained model
         load_path = self.opt['path'].get('pretrain_network_g', None)
@@ -65,7 +64,7 @@ class GFPGANModel(BaseModel):
         self.net_d.train()
         self.net_g_ema.eval()
 
-        # ----------- facial components networks ----------- #
+        # ----------- facial component networks ----------- #
         if ('network_d_left_eye' in self.opt and 'network_d_right_eye' in self.opt and 'network_d_mouth' in self.opt):
             self.use_facial_disc = True
         else:
@@ -102,17 +101,19 @@ class GFPGANModel(BaseModel):
             self.cri_component = build_loss(train_opt['gan_component_opt']).to(self.device)
 
         # ----------- define losses ----------- #
+        # pixel loss
         if train_opt.get('pixel_opt'):
             self.cri_pix = build_loss(train_opt['pixel_opt']).to(self.device)
         else:
             self.cri_pix = None
 
+        # perceptual loss
         if train_opt.get('perceptual_opt'):
             self.cri_perceptual = build_loss(train_opt['perceptual_opt']).to(self.device)
         else:
             self.cri_perceptual = None
 
-        # L1 loss used in pyramid loss, component style loss and identity loss
+        # L1 loss is used in pyramid loss, component style loss and identity loss
         self.cri_l1 = build_loss(train_opt['L1_opt']).to(self.device)
 
         # gan loss (wgan)
@@ -179,6 +180,7 @@ class GFPGANModel(BaseModel):
         self.optimizer_d = self.get_optimizer(optim_type, optim_params_d, lr, betas=betas)
         self.optimizers.append(self.optimizer_d)
 
+        # ----------- optimizers for facial component networks ----------- #
         if self.use_facial_disc:
             # setup optimizers for facial component discriminators
             optim_type = train_opt['optim_component'].pop('type')
@@ -221,6 +223,7 @@ class GFPGANModel(BaseModel):
             #     self.idx = self.idx + 1
 
     def construct_img_pyramid(self):
+        """Construct image pyramid for intermediate restoration loss"""
         pyramid_gt = [self.gt]
         down_img = self.gt
         for _ in range(0, self.log_size - 3):
@@ -229,7 +232,6 @@ class GFPGANModel(BaseModel):
         return pyramid_gt
 
     def get_roi_regions(self, eye_out_size=80, mouth_out_size=120):
-        # hard code
         face_ratio = int(self.opt['network_g']['out_size'] / 512)
         eye_out_size *= face_ratio
         mouth_out_size *= face_ratio
@@ -288,6 +290,7 @@ class GFPGANModel(BaseModel):
             p.requires_grad = False
         self.optimizer_g.zero_grad()
 
+        # do not update facial component net_d
         if self.use_facial_disc:
             for p in self.net_d_left_eye.parameters():
                 p.requires_grad = False
@@ -419,11 +422,12 @@ class GFPGANModel(BaseModel):
         real_d_pred = self.net_d(self.gt)
         l_d = self.cri_gan(real_d_pred, True, is_disc=True) + self.cri_gan(fake_d_pred, False, is_disc=True)
         loss_dict['l_d'] = l_d
-        # In wgan, real_score should be positive and fake_score should benegative
+        # In WGAN, real_score should be positive and fake_score should be negative
         loss_dict['real_score'] = real_d_pred.detach().mean()
         loss_dict['fake_score'] = fake_d_pred.detach().mean()
         l_d.backward()
 
+        # regularization loss
         if current_iter % self.net_d_reg_every == 0:
             self.gt.requires_grad = True
             real_pred = self.net_d(self.gt)
@@ -434,8 +438,9 @@ class GFPGANModel(BaseModel):
 
         self.optimizer_d.step()
 
+        # optimize facial component discriminators
         if self.use_facial_disc:
-            # lefe eye
+            # left eye
             fake_d_pred, _ = self.net_d_left_eye(self.left_eyes.detach())
             real_d_pred, _ = self.net_d_left_eye(self.left_eyes_gt)
             l_d_left_eye = self.cri_component(
@@ -485,22 +490,32 @@ class GFPGANModel(BaseModel):
     def nondist_validation(self, dataloader, current_iter, tb_logger, save_img):
         dataset_name = dataloader.dataset.opt['name']
         with_metrics = self.opt['val'].get('metrics') is not None
+        use_pbar = self.opt['val'].get('pbar', False)
+
         if with_metrics:
-            self.metric_results = {metric: 0 for metric in self.opt['val']['metrics'].keys()}
-        pbar = tqdm(total=len(dataloader), unit='image')
+            if not hasattr(self, 'metric_results'):  # only execute in the first run
+                self.metric_results = {metric: 0 for metric in self.opt['val']['metrics'].keys()}
+            # initialize the best metric results for each dataset_name (supporting multiple validation datasets)
+            self._initialize_best_metric_results(dataset_name)
+            # zero self.metric_results
+            self.metric_results = {metric: 0 for metric in self.metric_results}
+
+        metric_data = dict()
+        if use_pbar:
+            pbar = tqdm(total=len(dataloader), unit='image')
 
         for idx, val_data in enumerate(dataloader):
             img_name = osp.splitext(osp.basename(val_data['lq_path'][0]))[0]
             self.feed_data(val_data)
             self.test()
 
-            visuals = self.get_current_visuals()
-            sr_img = tensor2img([visuals['sr']], min_max=(-1, 1))
-            gt_img = tensor2img([visuals['gt']], min_max=(-1, 1))
-
-            if 'gt' in visuals:
-                gt_img = tensor2img([visuals['gt']], min_max=(-1, 1))
+            sr_img = tensor2img(self.output.detach().cpu(), min_max=(-1, 1))
+            metric_data['img'] = sr_img
+            if hasattr(self, 'gt'):
+                gt_img = tensor2img(self.gt.detach().cpu(), min_max=(-1, 1))
+                metric_data['img2'] = gt_img
                 del self.gt
+
             # tentative for out of GPU memory
             del self.lq
             del self.output
@@ -522,35 +537,38 @@ class GFPGANModel(BaseModel):
             if with_metrics:
                 # calculate metrics
                 for name, opt_ in self.opt['val']['metrics'].items():
-                    metric_data = dict(img1=sr_img, img2=gt_img)
                     self.metric_results[name] += calculate_metric(metric_data, opt_)
-            pbar.update(1)
-            pbar.set_description(f'Test {img_name}')
-        pbar.close()
+            if use_pbar:
+                pbar.update(1)
+                pbar.set_description(f'Test {img_name}')
+        if use_pbar:
+            pbar.close()
 
         if with_metrics:
             for metric in self.metric_results.keys():
                 self.metric_results[metric] /= (idx + 1)
+                # update the best metric result
+                self._update_best_metric_result(dataset_name, metric, self.metric_results[metric], current_iter)
 
             self._log_validation_metric_values(current_iter, dataset_name, tb_logger)
 
     def _log_validation_metric_values(self, current_iter, dataset_name, tb_logger):
         log_str = f'Validation {dataset_name}\n'
         for metric, value in self.metric_results.items():
-            log_str += f'\t # {metric}: {value:.4f}\n'
+            log_str += f'\t # {metric}: {value:.4f}'
+            if hasattr(self, 'best_metric_results'):
+                log_str += (f'\tBest: {self.best_metric_results[dataset_name][metric]["val"]:.4f} @ '
+                            f'{self.best_metric_results[dataset_name][metric]["iter"]} iter')
+            log_str += '\n'
+
         logger = get_root_logger()
         logger.info(log_str)
         if tb_logger:
             for metric, value in self.metric_results.items():
-                tb_logger.add_scalar(f'metrics/{metric}', value, current_iter)
-
-    def get_current_visuals(self):
-        out_dict = OrderedDict()
-        out_dict['gt'] = self.gt.detach().cpu()
-        out_dict['sr'] = self.output.detach().cpu()
-        return out_dict
+                tb_logger.add_scalar(f'metrics/{dataset_name}/{metric}', value, current_iter)
 
     def save(self, epoch, current_iter):
+        # save net_g and net_d
         self.save_network([self.net_g, self.net_g_ema], 'net_g', current_iter, param_key=['params', 'params_ema'])
         self.save_network(self.net_d, 'net_d', current_iter)
         # save component discriminators
@@ -558,4 +576,5 @@ class GFPGANModel(BaseModel):
             self.save_network(self.net_d_left_eye, 'net_d_left_eye', current_iter)
             self.save_network(self.net_d_right_eye, 'net_d_right_eye', current_iter)
             self.save_network(self.net_d_mouth, 'net_d_mouth', current_iter)
+        # save training state
         self.save_training_state(epoch, current_iter)

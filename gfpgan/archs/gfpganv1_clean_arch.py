@@ -1,6 +1,7 @@
 import math
 import random
 import torch
+from basicsr.utils.registry import ARCH_REGISTRY
 from torch import nn
 from torch.nn import functional as F
 
@@ -8,14 +9,17 @@ from .stylegan2_clean_arch import StyleGAN2GeneratorClean
 
 
 class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
-    """StyleGAN2 Generator.
+    """StyleGAN2 Generator with SFT modulation (Spatial Feature Transform).
+
+    It is the clean version without custom compiled CUDA extensions used in StyleGAN2.
 
     Args:
         out_size (int): The spatial size of outputs.
         num_style_feat (int): Channel number of style features. Default: 512.
         num_mlp (int): Layer number of MLP style layers. Default: 8.
-        channel_multiplier (int): Channel multiplier for large networks of
-            StyleGAN2. Default: 2.
+        channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
+        narrow (float): The narrow ratio for channels. Default: 1.
+        sft_half (bool): Whether to apply SFT on half of the input channels. Default: False.
     """
 
     def __init__(self, out_size, num_style_feat=512, num_mlp=8, channel_multiplier=2, narrow=1, sft_half=False):
@@ -25,7 +29,6 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
             num_mlp=num_mlp,
             channel_multiplier=channel_multiplier,
             narrow=narrow)
-
         self.sft_half = sft_half
 
     def forward(self,
@@ -38,21 +41,18 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
                 truncation_latent=None,
                 inject_index=None,
                 return_latents=False):
-        """Forward function for StyleGAN2Generator.
+        """Forward function for StyleGAN2GeneratorCSFT.
 
         Args:
             styles (list[Tensor]): Sample codes of styles.
-            input_is_latent (bool): Whether input is latent style.
-                Default: False.
+            conditions (list[Tensor]): SFT conditions to generators.
+            input_is_latent (bool): Whether input is latent style. Default: False.
             noise (Tensor | None): Input noise or None. Default: None.
-            randomize_noise (bool): Randomize noise, used when 'noise' is
-                False. Default: True.
-            truncation (float): TODO. Default: 1.
-            truncation_latent (Tensor | None): TODO. Default: None.
-            inject_index (int | None): The injection index for mixing noise.
-                Default: None.
-            return_latents (bool): Whether to return style latents.
-                Default: False.
+            randomize_noise (bool): Randomize noise, used when 'noise' is False. Default: True.
+            truncation (float): The truncation ratio. Default: 1.
+            truncation_latent (Tensor | None): The truncation latent tensor. Default: None.
+            inject_index (int | None): The injection index for mixing noise. Default: None.
+            return_latents (bool): Whether to return style latents. Default: False.
         """
         # style codes -> latents with Style MLP layer
         if not input_is_latent:
@@ -69,7 +69,7 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
             for style in styles:
                 style_truncation.append(truncation_latent + truncation * (style - truncation_latent))
             styles = style_truncation
-        # get style latent with injection
+        # get style latents with injection
         if len(styles) == 1:
             inject_index = self.num_latent
 
@@ -98,15 +98,15 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
             # the conditions may have fewer levels
             if i < len(conditions):
                 # SFT part to combine the conditions
-                if self.sft_half:
+                if self.sft_half:  # only apply SFT to half of the channels
                     out_same, out_sft = torch.split(out, int(out.size(1) // 2), dim=1)
                     out_sft = out_sft * conditions[i - 1] + conditions[i]
                     out = torch.cat([out_same, out_sft], dim=1)
-                else:
+                else:  # apply SFT to all the channels
                     out = out * conditions[i - 1] + conditions[i]
 
             out = conv2(out, latent[:, i + 1], noise=noise2)
-            skip = to_rgb(out, latent[:, i + 2], skip)
+            skip = to_rgb(out, latent[:, i + 2], skip)  # feature back to the rgb space
             i += 2
 
         image = skip
@@ -118,11 +118,12 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
 
 
 class ResBlock(nn.Module):
-    """Residual block with upsampling/downsampling.
+    """Residual block with bilinear upsampling/downsampling.
 
     Args:
         in_channels (int): Channel number of the input.
         out_channels (int): Channel number of the output.
+        mode (str): Upsampling/downsampling mode. Options: down | up. Default: down.
     """
 
     def __init__(self, in_channels, out_channels, mode='down'):
@@ -148,8 +149,27 @@ class ResBlock(nn.Module):
         return out
 
 
+@ARCH_REGISTRY.register()
 class GFPGANv1Clean(nn.Module):
-    """GFPGANv1 Clean version."""
+    """The GFPGAN architecture: Unet + StyleGAN2 decoder with SFT.
+
+    It is the clean version without custom compiled CUDA extensions used in StyleGAN2.
+
+    Ref: GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior.
+
+    Args:
+        out_size (int): The spatial size of outputs.
+        num_style_feat (int): Channel number of style features. Default: 512.
+        channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
+        decoder_load_path (str): The path to the pre-trained decoder model (usually, the StyleGAN2). Default: None.
+        fix_decoder (bool): Whether to fix the decoder. Default: True.
+
+        num_mlp (int): Layer number of MLP style layers. Default: 8.
+        input_is_latent (bool): Whether input is latent style. Default: False.
+        different_w (bool): Whether to use different latent w for different layers. Default: False.
+        narrow (float): The narrow ratio for channels. Default: 1.
+        sft_half (bool): Whether to apply SFT on half of the input channels. Default: False.
+    """
 
     def __init__(
             self,
@@ -170,7 +190,7 @@ class GFPGANv1Clean(nn.Module):
         self.different_w = different_w
         self.num_style_feat = num_style_feat
 
-        unet_narrow = narrow * 0.5
+        unet_narrow = narrow * 0.5  # by default, use a half of input channels
         channels = {
             '4': int(512 * unet_narrow),
             '8': int(512 * unet_narrow),
@@ -218,6 +238,7 @@ class GFPGANv1Clean(nn.Module):
 
         self.final_linear = nn.Linear(channels['4'] * 4 * 4, linear_out_channel)
 
+        # the decoder: stylegan2 generator with SFT modulations
         self.stylegan_decoder = StyleGAN2GeneratorCSFT(
             out_size=out_size,
             num_style_feat=num_style_feat,
@@ -226,14 +247,16 @@ class GFPGANv1Clean(nn.Module):
             narrow=narrow,
             sft_half=sft_half)
 
+        # load pre-trained stylegan2 model if necessary
         if decoder_load_path:
             self.stylegan_decoder.load_state_dict(
                 torch.load(decoder_load_path, map_location=lambda storage, loc: storage)['params_ema'])
+        # fix decoder without updating params
         if fix_decoder:
             for _, param in self.stylegan_decoder.named_parameters():
                 param.requires_grad = False
 
-        # for SFT
+        # for SFT modulations (scale and shift)
         self.condition_scale = nn.ModuleList()
         self.condition_shift = nn.ModuleList()
         for i in range(3, self.log_size + 1):
@@ -251,13 +274,15 @@ class GFPGANv1Clean(nn.Module):
                     nn.Conv2d(out_channels, out_channels, 3, 1, 1), nn.LeakyReLU(0.2, True),
                     nn.Conv2d(out_channels, sft_out_channels, 3, 1, 1)))
 
-    def forward(self,
-                x,
-                return_latents=False,
-                save_feat_path=None,
-                load_feat_path=None,
-                return_rgb=True,
-                randomize_noise=True):
+    def forward(self, x, return_latents=False, return_rgb=True, randomize_noise=True):
+        """Forward function for GFPGANv1Clean.
+
+        Args:
+            x (Tensor): Input images.
+            return_latents (bool): Whether to return style latents. Default: False.
+            return_rgb (bool): Whether return intermediate rgb images. Default: True.
+            randomize_noise (bool): Randomize noise, used when 'noise' is False. Default: True.
+        """
         conditions = []
         unet_skips = []
         out_rgbs = []
@@ -273,13 +298,14 @@ class GFPGANv1Clean(nn.Module):
         style_code = self.final_linear(feat.view(feat.size(0), -1))
         if self.different_w:
             style_code = style_code.view(style_code.size(0), -1, self.num_style_feat)
+
         # decode
         for i in range(self.log_size - 2):
             # add unet skip
             feat = feat + unet_skips[i]
             # ResUpLayer
             feat = self.conv_body_up[i](feat)
-            # generate scale and shift for SFT layer
+            # generate scale and shift for SFT layers
             scale = self.condition_scale[i](feat)
             conditions.append(scale.clone())
             shift = self.condition_shift[i](feat)
@@ -287,12 +313,6 @@ class GFPGANv1Clean(nn.Module):
             # generate rgb images
             if return_rgb:
                 out_rgbs.append(self.toRGB[i](feat))
-
-        if save_feat_path is not None:
-            torch.save(conditions, save_feat_path)
-        if load_feat_path is not None:
-            conditions = torch.load(load_feat_path)
-            conditions = [v.cuda() for v in conditions]
 
         # decoder
         image, _ = self.stylegan_decoder([style_code],

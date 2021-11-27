@@ -15,6 +15,19 @@ from torchvision.transforms.functional import (adjust_brightness, adjust_contras
 
 @DATASET_REGISTRY.register()
 class FFHQDegradationDataset(data.Dataset):
+    """FFHQ dataset for GFPGAN.
+
+    It reads high resolution images, and then generate low-quality (LQ) images on-the-fly.
+
+    Args:
+        opt (dict): Config for train datasets. It contains the following keys:
+            dataroot_gt (str): Data root path for gt.
+            io_backend (dict): IO backend type and other kwarg.
+            mean (list | tuple): Image mean.
+            std (list | tuple): Image std.
+            use_hflip (bool): Whether to horizontally flip.
+            Please see more options in the codes.
+    """
 
     def __init__(self, opt):
         super(FFHQDegradationDataset, self).__init__()
@@ -29,11 +42,13 @@ class FFHQDegradationDataset(data.Dataset):
         self.out_size = opt['out_size']
 
         self.crop_components = opt.get('crop_components', False)  # facial components
-        self.eye_enlarge_ratio = opt.get('eye_enlarge_ratio', 1)
+        self.eye_enlarge_ratio = opt.get('eye_enlarge_ratio', 1)  # whether enlarge eye regions
 
         if self.crop_components:
+            # load component list from a pre-process pth files
             self.components_list = torch.load(opt.get('component_path'))
 
+        # file client (lmdb io backend)
         if self.io_backend_opt['type'] == 'lmdb':
             self.io_backend_opt['db_paths'] = self.gt_folder
             if not self.gt_folder.endswith('.lmdb'):
@@ -41,9 +56,10 @@ class FFHQDegradationDataset(data.Dataset):
             with open(osp.join(self.gt_folder, 'meta_info.txt')) as fin:
                 self.paths = [line.split('.')[0] for line in fin]
         else:
+            # disk backend: scan file list from a folder
             self.paths = paths_from_folder(self.gt_folder)
 
-        # degradations
+        # degradation configurations
         self.blur_kernel_size = opt['blur_kernel_size']
         self.kernel_list = opt['kernel_list']
         self.kernel_prob = opt['kernel_prob']
@@ -60,22 +76,20 @@ class FFHQDegradationDataset(data.Dataset):
         self.gray_prob = opt.get('gray_prob')
 
         logger = get_root_logger()
-        logger.info(f'Blur: blur_kernel_size {self.blur_kernel_size}, '
-                    f'sigma: [{", ".join(map(str, self.blur_sigma))}]')
+        logger.info(f'Blur: blur_kernel_size {self.blur_kernel_size}, sigma: [{", ".join(map(str, self.blur_sigma))}]')
         logger.info(f'Downsample: downsample_range [{", ".join(map(str, self.downsample_range))}]')
         logger.info(f'Noise: [{", ".join(map(str, self.noise_range))}]')
         logger.info(f'JPEG compression: [{", ".join(map(str, self.jpeg_range))}]')
 
         if self.color_jitter_prob is not None:
-            logger.info(f'Use random color jitter. Prob: {self.color_jitter_prob}, '
-                        f'shift: {self.color_jitter_shift}')
+            logger.info(f'Use random color jitter. Prob: {self.color_jitter_prob}, shift: {self.color_jitter_shift}')
         if self.gray_prob is not None:
             logger.info(f'Use random gray. Prob: {self.gray_prob}')
-
         self.color_jitter_shift /= 255.
 
     @staticmethod
     def color_jitter(img, shift):
+        """jitter color: randomly jitter the RGB values, in numpy formats"""
         jitter_val = np.random.uniform(-shift, shift, 3).astype(np.float32)
         img = img + jitter_val
         img = np.clip(img, 0, 1)
@@ -83,6 +97,7 @@ class FFHQDegradationDataset(data.Dataset):
 
     @staticmethod
     def color_jitter_pt(img, brightness, contrast, saturation, hue):
+        """jitter color: randomly jitter the brightness, contrast, saturation, and hue, in torch Tensor formats"""
         fn_idx = torch.randperm(4)
         for fn_id in fn_idx:
             if fn_id == 0 and brightness is not None:
@@ -103,6 +118,7 @@ class FFHQDegradationDataset(data.Dataset):
         return img
 
     def get_component_coordinates(self, index, status):
+        """Get facial component (left_eye, right_eye, mouth) coordinates from a pre-loaded pth file"""
         components_bbox = self.components_list[f'{index:08d}']
         if status[0]:  # hflip
             # exchange right and left eye
@@ -131,6 +147,7 @@ class FFHQDegradationDataset(data.Dataset):
             self.file_client = FileClient(self.io_backend_opt.pop('type'), **self.io_backend_opt)
 
         # load gt image
+        # Shape: (h, w, c); channel order: BGR; image range: [0, 1], float32.
         gt_path = self.paths[index]
         img_bytes = self.file_client.get(gt_path)
         img_gt = imfrombytes(img_bytes, float32=True)
@@ -139,6 +156,7 @@ class FFHQDegradationDataset(data.Dataset):
         img_gt, status = augment(img_gt, hflip=self.opt['use_hflip'], rotation=False, return_status=True)
         h, w, _ = img_gt.shape
 
+        # get facial component coordinates
         if self.crop_components:
             locations = self.get_component_coordinates(index, status)
             loc_left_eye, loc_right_eye, loc_mouth = locations
@@ -173,9 +191,9 @@ class FFHQDegradationDataset(data.Dataset):
         if self.gray_prob and np.random.uniform() < self.gray_prob:
             img_lq = cv2.cvtColor(img_lq, cv2.COLOR_BGR2GRAY)
             img_lq = np.tile(img_lq[:, :, None], [1, 1, 3])
-            if self.opt.get('gt_gray'):
+            if self.opt.get('gt_gray'):  # whether convert GT to gray images
                 img_gt = cv2.cvtColor(img_gt, cv2.COLOR_BGR2GRAY)
-                img_gt = np.tile(img_gt[:, :, None], [1, 1, 3])
+                img_gt = np.tile(img_gt[:, :, None], [1, 1, 3])  # repeat the color channels
 
         # BGR to RGB, HWC to CHW, numpy to tensor
         img_gt, img_lq = img2tensor([img_gt, img_lq], bgr2rgb=True, float32=True)

@@ -14,6 +14,20 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class GFPGANer():
+    """Helper for restoration with GFPGAN.
+
+    It will detect and crop faces, and then resize the faces to 512x512.
+    GFPGAN is used to restored the resized faces.
+    The background is upsampled with the bg_upsampler.
+    Finally, the faces will be pasted back to the upsample background image.
+
+    Args:
+        model_path (str): The path to the GFPGAN model. It can be urls (will first download it automatically).
+        upscale (float): The upscale of the final output. Default: 2.
+        arch (str): The GFPGAN architecture. Option: clean | original. Default: clean.
+        channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
+        bg_upsampler (nn.Module): The upsampler for the background. Default: None.
+    """
 
     def __init__(self, model_path, upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=None):
         self.upscale = upscale
@@ -70,7 +84,7 @@ class GFPGANer():
     def enhance(self, img, has_aligned=False, only_center_face=False, paste_back=True):
         self.face_helper.clean_all()
 
-        if has_aligned:
+        if has_aligned:  # the inputs are already aligned
             img = cv2.resize(img, (512, 512))
             self.face_helper.cropped_faces = [img]
         else:
@@ -78,6 +92,7 @@ class GFPGANer():
             # get face landmarks for each face
             self.face_helper.get_face_landmarks_5(only_center_face=only_center_face, eye_dist_threshold=5)
             # eye_dist_threshold=5: skip faces whose eye distance is smaller than 5 pixels
+            # TODO: even with eye_dist_threshold, it will still introduce wrong detections and restorations.
             # align and warp each face
             self.face_helper.align_warp_face()
 
@@ -100,9 +115,9 @@ class GFPGANer():
             self.face_helper.add_restored_face(restored_face)
 
         if not has_aligned and paste_back:
-
+            # upsample the background
             if self.bg_upsampler is not None:
-                # Now only support RealESRGAN
+                # Now only support RealESRGAN for upsampling background
                 bg_img = self.bg_upsampler.enhance(img, outscale=self.upscale)[0]
             else:
                 bg_img = None
@@ -116,7 +131,9 @@ class GFPGANer():
 
 
 def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
-    """Ref:https://github.com/1adrianb/face-alignment/blob/master/face_alignment/utils.py
+    """Load file form http url, will download models if necessary.
+
+    Ref:https://github.com/1adrianb/face-alignment/blob/master/face_alignment/utils.py
     """
     if model_dir is None:
         hub_dir = get_dir()
