@@ -2,10 +2,9 @@ import cv2
 import os
 import torch
 from basicsr.utils import img2tensor, tensor2img
+from basicsr.utils.download_util import load_file_from_url
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
-from torch.hub import download_url_to_file, get_dir
 from torchvision.transforms.functional import normalize
-from urllib.parse import urlparse
 
 from gfpgan.archs.gfpganv1_arch import GFPGANv1
 from gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
@@ -70,7 +69,8 @@ class GFPGANer():
             device=self.device)
 
         if model_path.startswith('https://'):
-            model_path = load_file_from_url(url=model_path, model_dir='gfpgan/weights', progress=True, file_name=None)
+            model_path = load_file_from_url(
+                url=model_path, model_dir=os.path.join(ROOT_DIR, 'gfpgan/weights'), progress=True, file_name=None)
         loadnet = torch.load(model_path)
         if 'params_ema' in loadnet:
             keyname = 'params_ema'
@@ -128,25 +128,3 @@ class GFPGANer():
             return self.face_helper.cropped_faces, self.face_helper.restored_faces, restored_img
         else:
             return self.face_helper.cropped_faces, self.face_helper.restored_faces, None
-
-
-def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
-    """Load file form http url, will download models if necessary.
-
-    Ref:https://github.com/1adrianb/face-alignment/blob/master/face_alignment/utils.py
-    """
-    if model_dir is None:
-        hub_dir = get_dir()
-        model_dir = os.path.join(hub_dir, 'checkpoints')
-
-    os.makedirs(os.path.join(ROOT_DIR, model_dir), exist_ok=True)
-
-    parts = urlparse(url)
-    filename = os.path.basename(parts.path)
-    if file_name is not None:
-        filename = file_name
-    cached_file = os.path.abspath(os.path.join(ROOT_DIR, model_dir, filename))
-    if not os.path.exists(cached_file):
-        print(f'Downloading: "{url}" to {cached_file}\n')
-        download_url_to_file(url, cached_file, hash_prefix=None, progress=progress)
-    return cached_file

@@ -131,6 +131,69 @@ You could improve it according to your own needs.
 
 > python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 gfpgan/train.py -opt options/train_gfpgan_v1.yml --launcher pytorch
 
+## :whale2: Running GFPGAN in a Docker Container
+
+We provide a docker image of the project for easier installation.
+
+### :wrench: Dependencies and Installation
+
+- [NVIDIA-DOCKER](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+- NVIDIA GPU
+
+### Inference
+
+If you want to add new images, follow this convention for directories.
+Cropped images in `./inputs/cropped_faces` and
+whole images in `./inputs/whole_imgs`
+
+#### v0.1.0
+
+Using <https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth>
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume <absolute/path/inputs>:/app/inputs \
+    --volume <absolute/path/results>:/app/results \
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs --save_root results --arch original --channel 1
+```
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume <absolute/path/inputs>:/app/inputs \
+    --volume <absolute/path/results>:/app/results \
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --save_root results --arch original --channel 1 --aligned
+```
+
+#### v0.2.0
+
+Using <https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth>
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume <absolute/path/inputs>:/app/inputs \
+    --volume <absolute/path/results>:/app/results \
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 inference_gfpgan.py --upscale 2 --test_path inputs/whole_imgs --save_root results
+```
+
+### Training
+
+Follow training steps provided [here](#computer-training) until step 3.
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume <absolute/path/experiments/pretrained_models>:/app/experiments/pretrained_models
+    --volume <absolute/path/train_gfpgan_v1.yml>:/app/train_gfpgan_v1.yml
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 gfpgan/train.py -opt options/train_gfpgan_v1.yml --launcher pytorch
+```
+
 ## :scroll: License and Acknowledgement
 
 GFPGAN is released under Apache License Version 2.0.
