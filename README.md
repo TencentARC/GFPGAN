@@ -131,7 +131,7 @@ You could improve it according to your own needs.
 
 > python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 gfpgan/train.py -opt options/train_gfpgan_v1.yml --launcher pytorch
 
-## :docker: Running GFPGAN in a Docker Container
+## :whale2: Running GFPGAN in a Docker Container
 
 We provide a docker image of the project for easier installation.
 
@@ -166,7 +166,7 @@ nvidia-docker run \
 
 ### Training
 
-Follow training steps provided [here](##:computer:Training) until step 3.
+Follow training steps provided [here](#computer-training) until step 3.
 
 ```sh
 nvidia-docker run \
