@@ -1,7 +1,10 @@
- name: Docker Build
+name: Docker Build
 
 on:
   push:
+    branches:
+      - 'master'
+  pull_request:
     branches:
       - 'master'
 
