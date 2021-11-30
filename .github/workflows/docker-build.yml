@@ -1,12 +1,6 @@
  name: Docker Build
 
-on:
-  push:
-    branches:
-      - 'master'
-  pull_request:
-    branches:
-      - 'master'
+on: push
 
 jobs:
   docker:
