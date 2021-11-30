@@ -131,6 +131,52 @@ You could improve it according to your own needs.
 
 > python -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 gfpgan/train.py -opt options/train_gfpgan_v1.yml --launcher pytorch
 
+## :docker: Running GFPGAN in a Docker Container
+
+We provide a docker image of the project for easier installation.
+
+### :wrench: Dependencies and Installation
+
+- [NVIDIA-DOCKER](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html)
+- NVIDIA GPU
+
+### Inference
+
+If you want to add new images, follow this convention for directories.
+Cropped images in `./inputs/cropped_faces` and
+whole images in `./inputs/whole_imgs`
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume ./inputs:/app/inputs \
+    --volume ./results:/app/results \
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs
+```
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume ./inputs:/app/inputs \
+    --volume ./results:/app/results \
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 inference_gfpgan_full.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --aligned
+```
+
+### Training
+
+Follow training steps provided [here](##:computer:Training) until step 3.
+
+```sh
+nvidia-docker run \
+    --name gfpgan \
+    --volume ./experiments/pretrained_models:/app/experiments/pretrained_models
+    --volume ./train_gfpgan_v1.yml:/app/train_gfpgan_v1.yml
+    {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
+    python3 -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 train.py -opt train_gfpgan_v1.yml --launcher pytorch
+```
+
 ## :scroll: License and Acknowledgement
 
 GFPGAN is released under Apache License Version 2.0.
