@@ -17,7 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
 # Ninja
 RUN wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-linux.zip && \
     unzip ninja-linux.zip -d /usr/local/bin/ && \
-    update-alternatives --install /usr/bin/ninja ninja /usr/local/bin/ninja 1 --force 
+    update-alternatives --install /usr/bin/ninja ninja /usr/local/bin/ninja 1 --force
 
 
 RUN python3 -m pip install --upgrade pip && \
@@ -34,6 +34,8 @@ RUN wget https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.
 
 RUN rm -rf /var/cache/apt/* /var/lib/apt/lists/* && \
     apt-get autoremove -y && apt-get clean
+
+RUN python3 setup.py develop
 
 COPY . .
 
