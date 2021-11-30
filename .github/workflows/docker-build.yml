@@ -31,4 +31,5 @@ jobs:
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
-          tags: mostafaelmenbawy/GFPGAN:latest
+          username: mostafaelmenbawy/GFPGAN
+          tags: latest
