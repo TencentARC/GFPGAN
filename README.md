@@ -25,7 +25,7 @@ It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g
 If GFPGAN is helpful in your photos/projects, please help to :star: this repo or recommend it to your friends. Thanks:blush:
 Other recommended projects:<br>
 :arrow_forward: [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN): A practical algorithm for general image restoration<br>
-:arrow_forward: [BasicSR](https://github.com/xinntao/BasicSR): An ppen-source image and video restoration toolbox<br>
+:arrow_forward: [BasicSR](https://github.com/xinntao/BasicSR): An open-source image and video restoration toolbox<br>
 :arrow_forward: [facexlib](https://github.com/xinntao/facexlib): A collection that provides useful face-relation functions.<br>
 :arrow_forward: [HandyView](https://github.com/xinntao/HandyView): A PyQt5-based image viewer that is handy for view and comparison. <br>
 
@@ -53,7 +53,7 @@ Other recommended projects:<br>
 ### Installation
 
 We now provide a *clean* version of GFPGAN, which does not require customized CUDA extensions. <br>
-If you want want to use the original model in our paper, please see [PaperModel.md](PaperModel.md) for installation.
+If you want to use the original model in our paper, please see [PaperModel.md](PaperModel.md) for installation.
 
 1. Clone repo
 
@@ -95,7 +95,7 @@ wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1
 python inference_gfpgan.py --upscale 2 --test_path inputs/whole_imgs --save_root results
 ```
 
-If you want want to use the original model in our paper, please see [PaperModel.md](PaperModel.md) for installation and inference.
+If you want to use the original model in our paper, please see [PaperModel.md](PaperModel.md) for installation and inference.
 
 ## :european_castle: Model Zoo
 
