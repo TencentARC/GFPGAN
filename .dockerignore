@@ -21,7 +21,6 @@
 **/secrets.dev.yaml
 **/values.dev.yaml
 
-**/*README.md
 **/.github
 **/.gitlab
 **/*.gitlab-ci.yml
