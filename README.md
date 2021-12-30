@@ -194,8 +194,9 @@ Follow training steps provided [here](#computer-training) until step 3.
 ```sh
 nvidia-docker run \
     --name gfpgan \
-    --volume <absolute/path/experiments/pretrained_models>:/app/experiments/pretrained_models
-    --volume <absolute/path/train_gfpgan_v1.yml>:/app/train_gfpgan_v1.yml
+    --volume <absolute/path/experiments/pretrained_models>:/app/experiments/pretrained_models \
+    --volume <absolute/path/train_gfpgan_v1.yml>:/app/train_gfpgan_v1.yml \
+    -e BASICSR_JIT=True \
     {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
     python3 -m torch.distributed.launch --nproc_per_node=4 --master_port=22021 gfpgan/train.py -opt options/train_gfpgan_v1.yml --launcher pytorch
 ```
