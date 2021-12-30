@@ -150,7 +150,7 @@ If you want to add new images, follow this convention for directories.
 Cropped images in `./inputs/cropped_faces` and
 whole images in `./inputs/whole_imgs`
 
-#### v0.1.0
+#### v0.1.0 on GPU
 
 Using <https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth>
 
@@ -159,6 +159,7 @@ nvidia-docker run \
     --name gfpgan \
     --volume <absolute/path/inputs>:/app/inputs \
     --volume <absolute/path/results>:/app/results \
+    -e BASICSR_JIT=True \
     {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
     python3 inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/whole_imgs --save_root results --arch original --channel 1
 ```
@@ -168,6 +169,7 @@ nvidia-docker run \
     --name gfpgan \
     --volume <absolute/path/inputs>:/app/inputs \
     --volume <absolute/path/results>:/app/results \
+    -e BASICSR_JIT=True \
     {{ DOCKERHUB_REPOSITORY }}/GFPGAN:latest \
     python3 inference_gfpgan.py --model_path experiments/pretrained_models/GFPGANv1.pth --test_path inputs/cropped_faces --save_root results --arch original --channel 1 --aligned
 ```
@@ -177,7 +179,7 @@ nvidia-docker run \
 Using <https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth>
 
 ```sh
-nvidia-docker run \
+docker run \
     --name gfpgan \
     --volume <absolute/path/inputs>:/app/inputs \
     --volume <absolute/path/results>:/app/results \
