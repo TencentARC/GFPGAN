@@ -22,7 +22,7 @@ RUN wget https://github.com/ninja-build/ninja/releases/download/v1.8.2/ninja-lin
 # basicsr facexlib
 RUN python3 -m pip install --upgrade pip && \
     pip3 install --no-cache-dir torch>=1.7 opencv-python>=4.5 && \
-    pip3 install --no-cache-dir basicsr facexlib
+    pip3 install --no-cache-dir basicsr facexlib realesrgan
 
 # weights
 RUN wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth \
@@ -37,7 +37,7 @@ COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
-RUN python3 setup.py develop && \
-    pip3 install realesrgan
+RUN pip3 install .
+
 
 CMD ["python3", "inference_gfpgan.py", "--upscale", "2", "--test_path", "inputs/whole_imgs", "--save_root", "results"]
