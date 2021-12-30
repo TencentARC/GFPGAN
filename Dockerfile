@@ -1,7 +1,5 @@
 FROM nvidia/cuda:10.0-cudnn7-devel
 
-ENV BASICSR_JIT=True
-
 WORKDIR /app
 
 RUN apt-get update && apt-get install -y --no-install-recommends --fix-missing \
