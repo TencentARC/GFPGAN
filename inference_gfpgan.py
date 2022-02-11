@@ -13,8 +13,9 @@ def main():
     """Inference demo for GFPGAN.
     """
     parser = argparse.ArgumentParser()
-    parser.add_argument('--upscale', type=int, default=2, help='The final upsampling scale of the image')
-    parser.add_argument('--arch', type=str, default='clean', help='The GFPGAN architecture. Option: clean | original')
+    parser.add_argument('--upscale', type=int, default=2, help='The final upsampling scale of the image. Default: 2.')
+    parser.add_argument(
+        '--arch', type=str, default='clean', help='The GFPGAN architecture. Option: clean | original. Default: clean.')
     parser.add_argument('--channel', type=int, default=2, help='Channel multiplier for large networks of StyleGAN2')
     parser.add_argument('--model_path', type=str, default='experiments/pretrained_models/GFPGANCleanv1-NoCE-C2.pth')
     parser.add_argument('--bg_upsampler', type=str, default='realesrgan', help='background upsampler')
