@@ -9,6 +9,8 @@ Note that V1.3 is not always better than V1.2. You may need to try different mod
 |V1.3 |  ✓ natural outputs<br> ✓better results on very low-quality inputs <br> ✓ work on relatively high-quality inputs <br>✓ can have repeated (twice) restorations | ✗ not very sharp <br> ✗ have a slight change on identity |
 |V1.2 |  ✓ sharper output <br> ✓ with beauty makeup | ✗ some outputs are unnatural|
 
+For the following images, you may need to zoom in for comparing details.
+
 | Input | V1  | V1.2 | V1.3
 | :---: | :---:        |     :---:      |  :---:      |
 |![019_Anne_Hathaway_01_00](https://user-images.githubusercontent.com/17445847/153762146-96b25999-4ddd-42a5-a3fe-bb90565f4c4f.png)|  ![](https://user-images.githubusercontent.com/17445847/153762256-ef41e749-5a27-495c-8a9c-d8403be55869.png)  | ![](https://user-images.githubusercontent.com/17445847/153762297-d41582fc-6253-4e7e-a1ce-4dc237ae3bf3.png)   | ![](https://user-images.githubusercontent.com/17445847/153762215-e0535e94-b5ba-426e-97b5-35c00873604d.png)  |
