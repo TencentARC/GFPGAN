@@ -209,18 +209,18 @@ class GFPGANModel(BaseModel):
             self.loc_right_eyes = data['loc_right_eye']
             self.loc_mouths = data['loc_mouth']
 
-            # uncomment to check data
-            # import torchvision
-            # if self.opt['rank'] == 0:
-            #     import os
-            #     os.makedirs('tmp/gt', exist_ok=True)
-            #     os.makedirs('tmp/lq', exist_ok=True)
-            #     print(self.idx)
-            #     torchvision.utils.save_image(
-            #         self.gt, f'tmp/gt/gt_{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
-            #     torchvision.utils.save_image(
-            #         self.lq, f'tmp/lq/lq{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
-            #     self.idx = self.idx + 1
+        # uncomment to check data
+        # import torchvision
+        # if self.opt['rank'] == 0:
+        #     import os
+        #     os.makedirs('tmp/gt', exist_ok=True)
+        #     os.makedirs('tmp/lq', exist_ok=True)
+        #     print(self.idx)
+        #     torchvision.utils.save_image(
+        #         self.gt, f'tmp/gt/gt_{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+        #     torchvision.utils.save_image(
+        #         self.lq, f'tmp/lq/lq{self.idx}.png', nrow=4, padding=2, normalize=True, range=(-1, 1))
+        #     self.idx = self.idx + 1
 
     def construct_img_pyramid(self):
         """Construct image pyramid for intermediate restoration loss"""
@@ -300,10 +300,9 @@ class GFPGANModel(BaseModel):
                 p.requires_grad = False
 
         # image pyramid loss weight
-        if current_iter < self.opt['train'].get('remove_pyramid_loss', float('inf')):
-            pyramid_loss_weight = self.opt['train'].get('pyramid_loss_weight', 1)
-        else:
-            pyramid_loss_weight = 1e-12  # very small loss
+        pyramid_loss_weight = self.opt['train'].get('pyramid_loss_weight', 0)
+        if pyramid_loss_weight > 0 and current_iter > self.opt['train'].get('remove_pyramid_loss', float('inf')):
+            pyramid_loss_weight = 1e-12  # very small weight to avoid unused param error
         if pyramid_loss_weight > 0:
             self.output, out_rgbs = self.net_g(self.lq, return_rgb=True)
             pyramid_gt = self.construct_img_pyramid()
