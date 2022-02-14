@@ -1,12 +1,12 @@
 import math
 import random
 import torch
-from basicsr.archs.stylegan2_bilinear_arch import (ConvLayer, EqualConv2d, EqualLinear, ResBlock, ScaledLeakyReLU,
-                                                   StyleGAN2GeneratorBilinear)
 from basicsr.utils.registry import ARCH_REGISTRY
 from torch import nn
 
 from .gfpganv1_arch import ResUpBlock
+from .stylegan2_bilinear_arch import (ConvLayer, EqualConv2d, EqualLinear, ResBlock, ScaledLeakyReLU,
+                                      StyleGAN2GeneratorBilinear)
 
 
 class StyleGAN2GeneratorBilinearSFT(StyleGAN2GeneratorBilinear):
