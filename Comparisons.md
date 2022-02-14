@@ -9,7 +9,7 @@ Note that V1.3 is not always better than V1.2. You may need to try different mod
 |V1.3 |  ✓ natural outputs<br> ✓better results on very low-quality inputs <br> ✓ work on relatively high-quality inputs <br>✓ can have repeated (twice) restorations | ✗ not very sharp <br> ✗ have a slight change on identity |
 |V1.2 |  ✓ sharper output <br> ✓ with beauty makeup | ✗ some outputs are unnatural|
 
-For the following images, you may need to zoom in for comparing details.
+For the following images, you may need to **zoom in** for comparing details, or **click the image** to see in the full size.
 
 | Input | V1  | V1.2 | V1.3
 | :---: | :---:        |     :---:      |  :---:      |
