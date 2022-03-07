@@ -1,4 +1,8 @@
-# GFPGAN (CVPR 2021)
+<p align="center">
+  <img src="assets/gfpgan_logo.png" height=130>
+</p>
+
+## <div align="center"><b><a href="README.md">English</a> | <a href="README_CN.md">简体中文</a></b></div>
 
 [![download](https://img.shields.io/github/downloads/TencentARC/GFPGAN/total.svg)](https://github.com/TencentARC/GFPGAN/releases)
 [![PyPI](https://img.shields.io/pypi/v/gfpgan)](https://pypi.org/project/gfpgan/)
@@ -11,14 +15,19 @@
 1. [Colab Demo](https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo) for GFPGAN <a href="https://colab.research.google.com/drive/1sVsoBd9AjckIXThgtZhGrHRfFI6UUYOo"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="google colab logo"></a>; (Another [Colab Demo](https://colab.research.google.com/drive/1Oa1WwKB4M4l1GmR7CtswDVgOCOeSLChA?usp=sharing) for the original paper model)
 2. Online demo: [Huggingface](https://huggingface.co/spaces/akhaliq/GFPGAN) (return only the cropped face)
 3. Online demo: [Replicate.ai](https://replicate.com/xinntao/gfpgan) (may need to sign in, return the whole image)
-4. We provide a *clean* version of GFPGAN, which can run without CUDA extensions. So that it can run in **Windows** or on **CPU mode**.
+4. Online demo: [Baseten.co](https://app.baseten.co/applications/Q04Lz0d/operator_views/8qZG6Bg) (backed by GPU, returns the whole image)
+5. We provide a *clean* version of GFPGAN, which can run without CUDA extensions. So that it can run in **Windows** or on **CPU mode**.
 
 > :rocket: **Thanks for your interest in our work. You may also want to check our new updates on the *tiny models* for *anime images and videos* in [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN/blob/master/docs/anime_video_model.md)** :blush:
 
 GFPGAN aims at developing a **Practical Algorithm for Real-world Face Restoration**.<br>
 It leverages rich and diverse priors encapsulated in a pretrained face GAN (*e.g.*, StyleGAN2) for blind face restoration.
 
+:question: Frequently Asked Questions can be found in [FAQ.md](FAQ.md).
+
 :triangular_flag_on_post: **Updates**
+
+- :fire::fire::white_check_mark: Add **[V1.3 model](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth)**, which produces **more natural** restoration results, and better results on *very low-quality* / *high-quality* inputs. See more in [Model zoo](#european_castle-model-zoo), [Comparisons.md](Comparisons.md)
 - :white_check_mark: Integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio). See [Gradio Web Demo](https://huggingface.co/spaces/akhaliq/GFPGAN).
 - :white_check_mark: Support enhancing non-face regions (background) with [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN).
 - :white_check_mark: We provide a *clean* version of GFPGAN, which does not require CUDA extensions.
@@ -87,24 +96,54 @@ If you want to use the original model in our paper, please see [PaperModel.md](P
 
 ## :zap: Quick Inference
 
-Download pre-trained models: [GFPGANCleanv1-NoCE-C2.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth)
+We take the v1.3 version for an example. More models can be found [here](#european_castle-model-zoo).
+
+Download pre-trained models: [GFPGANv1.3.pth](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth)
 
 ```bash
-wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth -P experiments/pretrained_models
+wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth -P experiments/pretrained_models
 ```
 
 **Inference!**
 
 ```bash
-python inference_gfpgan.py --upscale 2 --test_path inputs/whole_imgs --save_root results
+python inference_gfpgan.py -i inputs/whole_imgs -o results -v 1.3 -s 2
+```
+
+```console
+Usage: python inference_gfpgan.py -i inputs/whole_imgs -o results -v 1.3 -s 2 [options]...
+
+  -h                   show this help
+  -i input             Input image or folder. Default: inputs/whole_imgs
+  -o output            Output folder. Default: results
+  -v version           GFPGAN model version. Option: 1 | 1.2 | 1.3. Default: 1.3
+  -s upscale           The final upsampling scale of the image. Default: 2
+  -bg_upsampler        background upsampler. Default: realesrgan
+  -bg_tile             Tile size for background sampler, 0 for no tile during testing. Default: 400
+  -suffix              Suffix of the restored faces
+  -only_center_face    Only restore the center face
+  -aligned             Input are aligned faces
+  -ext                 Image extension. Options: auto | jpg | png, auto means using the same extension as inputs. Default: auto
 ```
 
 If you want to use the original model in our paper, please see [PaperModel.md](PaperModel.md) for installation and inference.
 
 ## :european_castle: Model Zoo
 
-- [GFPGANCleanv1-NoCE-C2.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth): No colorization; no CUDA extensions are required. It is still in training. Trained with more data with pre-processing.
-- [GFPGANv1.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth): The paper model, with colorization.
+| Version | Model Name  | Description |
+| :---: | :---:        |     :---:      |
+| V1.3 | [GFPGANv1.3.pth](https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth) | Based on V1.2; **more natural** restoration results; better results on very low-quality / high-quality inputs. |
+| V1.2 | [GFPGANCleanv1-NoCE-C2.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth) | No colorization; no CUDA extensions are required. Trained with more data with pre-processing. |
+| V1 | [GFPGANv1.pth](https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth) | The paper model, with colorization. |
+
+The comparisons are in [Comparisons.md](Comparisons.md).
+
+Note that V1.3 is not always better than V1.2. You may need to select different models based on your purpose and inputs.
+
+| Version | Strengths  | Weaknesses |
+| :---: | :---:        |     :---:      |
+|V1.3 |  ✓ natural outputs<br> ✓better results on very low-quality inputs <br> ✓ work on relatively high-quality inputs <br>✓ can have repeated (twice) restorations | ✗ not very sharp <br> ✗ have a slight change on identity |
+|V1.2 |  ✓ sharper output <br> ✓ with beauty makeup | ✗ some outputs are unnatural |
 
 You can find **more models (such as the discriminators)** here: [[Google Drive](https://drive.google.com/drive/folders/17rLiFzcUMoQuhLnptDsKolegHWwJOnHu?usp=sharing)], OR [[Tencent Cloud 腾讯微云](https://share.weiyun.com/ShYoCCoc)]
 
