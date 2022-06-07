@@ -79,6 +79,7 @@ class GFPGANer():
             crop_ratio=(1, 1),
             det_model='retinaface_resnet50',
             save_ext='png',
+            use_parse=True,
             device=self.device)
 
         if model_path.startswith('https://'):
