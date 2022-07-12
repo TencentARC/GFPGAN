@@ -3,7 +3,7 @@ import os.path as osp
 import torch
 from basicsr.archs import build_network
 from basicsr.losses import build_loss
-from basicsr.losses.losses import r1_penalty
+from basicsr.losses.gan_loss import r1_penalty
 from basicsr.metrics import calculate_metric
 from basicsr.models.base_model import BaseModel
 from basicsr.utils import get_root_logger, imwrite, tensor2img
