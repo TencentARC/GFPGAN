@@ -36,6 +36,7 @@ def main():
     parser.add_argument('--suffix', type=str, default=None, help='Suffix of the restored faces')
     parser.add_argument('--only_center_face', action='store_true', help='Only restore the center face')
     parser.add_argument('--aligned', action='store_true', help='Input are aligned faces')
+    parser.add_argument('--force_esrgan', action='store_true', help='Force use of esrgan on CPU.  WARNING: SLOW!')
     parser.add_argument(
         '--ext',
         type=str,
@@ -57,7 +58,8 @@ def main():
 
     # ------------------------ set up background upsampler ------------------------
     if args.bg_upsampler == 'realesrgan':
-        if not torch.cuda.is_available():  # CPU
+        cuda_available = torch.cuda.is_available()
+        if not cuda_available and args.force_esrgan == False:  # CPU
             import warnings
             warnings.warn('The unoptimized RealESRGAN is slow on CPU. We do not use it. '
                           'If you really want to use it, please modify the corresponding codes.')
@@ -73,7 +75,7 @@ def main():
                 tile=args.bg_tile,
                 tile_pad=10,
                 pre_pad=0,
-                half=True)  # need to set False in CPU mode
+                half=True if cuda_available else False)  # need to set False in CPU mode
     else:
         bg_upsampler = None
 
