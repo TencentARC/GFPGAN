@@ -1,0 +1,41 @@
+name: release
+on:
+  push:
+    tags:
+      - '*'
+
+jobs:
+  build:
+    permissions: write-all
+    name: Create Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: GFPGAN ${{ github.ref }} Release Note
+          body: |
+            🚀 See you again 😸
+            🚀Have a nice day 😸 and happy everyday 😃
+            🚀 Long time no see ☄️
+
+            ✨ **Highlights**
+            ✅ [Features] Support ...
+
+            🐛 **Bug Fixes**
+
+            🌴 **Improvements**
+
+            📢📢📢
+
+            <p align="center">
+               <img src="https://raw.githubusercontent.com/TencentARC/GFPGAN/master/assets/gfpgan_logo.png" height=150>
+            </p>
+          draft: true
+          prerelease: false
