@@ -1,7 +1,7 @@
 # general settings
 name: train_GFPGANv1_512
 model_type: GFPGANModel
-num_gpu: 4
+num_gpu: auto  # officially, we use 4 GPUs
 manual_seed: 0
 
 # dataset and data loader settings
@@ -194,7 +194,7 @@ val:
   save_img: true
 
   metrics:
-    psnr: # metric name, can be arbitrary
+    psnr: # metric name
       type: calculate_psnr
       crop_border: 0
       test_y_channel: false

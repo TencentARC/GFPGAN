@@ -2,11 +2,11 @@ import cv2
 import os
 import torch
 from basicsr.utils import img2tensor, tensor2img
+from basicsr.utils.download_util import load_file_from_url
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
-from torch.hub import download_url_to_file, get_dir
 from torchvision.transforms.functional import normalize
-from urllib.parse import urlparse
 
+from gfpgan.archs.gfpgan_bilinear_arch import GFPGANBilinear
 from gfpgan.archs.gfpganv1_arch import GFPGANv1
 from gfpgan.archs.gfpganv1_clean_arch import GFPGANv1Clean
 
@@ -14,13 +14,27 @@ ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
 class GFPGANer():
+    """Helper for restoration with GFPGAN.
 
-    def __init__(self, model_path, upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=None):
+    It will detect and crop faces, and then resize the faces to 512x512.
+    GFPGAN is used to restored the resized faces.
+    The background is upsampled with the bg_upsampler.
+    Finally, the faces will be pasted back to the upsample background image.
+
+    Args:
+        model_path (str): The path to the GFPGAN model. It can be urls (will first download it automatically).
+        upscale (float): The upscale of the final output. Default: 2.
+        arch (str): The GFPGAN architecture. Option: clean | original. Default: clean.
+        channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
+        bg_upsampler (nn.Module): The upsampler for the background. Default: None.
+    """
+
+    def __init__(self, model_path, upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=None, device=None):
         self.upscale = upscale
         self.bg_upsampler = bg_upsampler
 
         # initialize model
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
         # initialize the GFP-GAN
         if arch == 'clean':
             self.gfpgan = GFPGANv1Clean(
@@ -34,7 +48,19 @@ class GFPGANer():
                 different_w=True,
                 narrow=1,
                 sft_half=True)
-        else:
+        elif arch == 'bilinear':
+            self.gfpgan = GFPGANBilinear(
+                out_size=512,
+                num_style_feat=512,
+                channel_multiplier=channel_multiplier,
+                decoder_load_path=None,
+                fix_decoder=False,
+                num_mlp=8,
+                input_is_latent=True,
+                different_w=True,
+                narrow=1,
+                sft_half=True)
+        elif arch == 'original':
             self.gfpgan = GFPGANv1(
                 out_size=512,
                 num_style_feat=512,
@@ -53,10 +79,12 @@ class GFPGANer():
             crop_ratio=(1, 1),
             det_model='retinaface_resnet50',
             save_ext='png',
+            use_parse=True,
             device=self.device)
 
         if model_path.startswith('https://'):
-            model_path = load_file_from_url(url=model_path, model_dir='gfpgan/weights', progress=True, file_name=None)
+            model_path = load_file_from_url(
+                url=model_path, model_dir=os.path.join(ROOT_DIR, 'gfpgan/weights'), progress=True, file_name=None)
         loadnet = torch.load(model_path)
         if 'params_ema' in loadnet:
             keyname = 'params_ema'
@@ -70,7 +98,7 @@ class GFPGANer():
     def enhance(self, img, has_aligned=False, only_center_face=False, paste_back=True):
         self.face_helper.clean_all()
 
-        if has_aligned:
+        if has_aligned:  # the inputs are already aligned
             img = cv2.resize(img, (512, 512))
             self.face_helper.cropped_faces = [img]
         else:
@@ -78,6 +106,7 @@ class GFPGANer():
             # get face landmarks for each face
             self.face_helper.get_face_landmarks_5(only_center_face=only_center_face, eye_dist_threshold=5)
             # eye_dist_threshold=5: skip faces whose eye distance is smaller than 5 pixels
+            # TODO: even with eye_dist_threshold, it will still introduce wrong detections and restorations.
             # align and warp each face
             self.face_helper.align_warp_face()
 
@@ -100,9 +129,9 @@ class GFPGANer():
             self.face_helper.add_restored_face(restored_face)
 
         if not has_aligned and paste_back:
-
+            # upsample the background
             if self.bg_upsampler is not None:
-                # Now only support RealESRGAN
+                # Now only support RealESRGAN for upsampling background
                 bg_img = self.bg_upsampler.enhance(img, outscale=self.upscale)[0]
             else:
                 bg_img = None
@@ -113,23 +142,3 @@ class GFPGANer():
             return self.face_helper.cropped_faces, self.face_helper.restored_faces, restored_img
         else:
             return self.face_helper.cropped_faces, self.face_helper.restored_faces, None
-
-
-def load_file_from_url(url, model_dir=None, progress=True, file_name=None):
-    """Ref:https://github.com/1adrianb/face-alignment/blob/master/face_alignment/utils.py
-    """
-    if model_dir is None:
-        hub_dir = get_dir()
-        model_dir = os.path.join(hub_dir, 'checkpoints')
-
-    os.makedirs(os.path.join(ROOT_DIR, model_dir), exist_ok=True)
-
-    parts = urlparse(url)
-    filename = os.path.basename(parts.path)
-    if file_name is not None:
-        filename = file_name
-    cached_file = os.path.abspath(os.path.join(ROOT_DIR, model_dir, filename))
-    if not os.path.exists(cached_file):
-        print(f'Downloading: "{url}" to {cached_file}\n')
-        download_url_to_file(url, cached_file, hash_prefix=None, progress=progress)
-    return cached_file

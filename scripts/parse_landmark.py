@@ -1,24 +1,31 @@
 import cv2
 import json
 import numpy as np
+import os
 import torch
 from basicsr.utils import FileClient, imfrombytes
 from collections import OrderedDict
 
+# ---------------------------- This script is used to parse facial landmarks ------------------------------------- #
+# Configurations
+save_img = False
+scale = 0.5  # 0.5 for official FFHQ (512x512), 1 for others
+enlarge_ratio = 1.4  # only for eyes
+json_path = 'ffhq-dataset-v2.json'
+face_path = 'datasets/ffhq/ffhq_512.lmdb'
+save_path = './FFHQ_eye_mouth_landmarks_512.pth'
+
 print('Load JSON metadata...')
-# use the json file in FFHQ dataset
-with open('ffhq-dataset-v2.json', 'rb') as f:
+# use the official json file in FFHQ dataset
+with open(json_path, 'rb') as f:
     json_data = json.load(f, object_pairs_hook=OrderedDict)
 
 print('Open LMDB file...')
 # read ffhq images
-file_client = FileClient('lmdb', db_paths='datasets/ffhq/ffhq_512.lmdb')
-with open('datasets/ffhq/ffhq_512.lmdb/meta_info.txt') as fin:
+file_client = FileClient('lmdb', db_paths=face_path)
+with open(os.path.join(face_path, 'meta_info.txt')) as fin:
     paths = [line.split('.')[0] for line in fin]
 
-save_img = False
-scale = 0.5  # 0.5 for official FFHQ (512x512), 1 for others
-enlarge_ratio = 1.4  # only for eyes
 save_dict = {}
 
 for item_idx, item in enumerate(json_data.values()):
@@ -34,6 +41,7 @@ for item_idx, item in enumerate(json_data.values()):
         img_bytes = file_client.get(paths[item_idx])
         img = imfrombytes(img_bytes, float32=True)
 
+    # get landmarks for each component
     map_left_eye = list(range(36, 42))
     map_right_eye = list(range(42, 48))
     map_mouth = list(range(48, 68))
@@ -74,4 +82,4 @@ for item_idx, item in enumerate(json_data.values()):
     save_dict[f'{item_idx:08d}'] = item_dict
 
 print('Save...')
-torch.save(save_dict, './FFHQ_eye_mouth_landmarks_512.pth')
+torch.save(save_dict, save_path)

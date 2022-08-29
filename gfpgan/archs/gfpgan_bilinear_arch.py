@@ -1,24 +1,25 @@
 import math
 import random
 import torch
-from basicsr.archs.stylegan2_arch import (ConvLayer, EqualConv2d, EqualLinear, ResBlock, ScaledLeakyReLU,
-                                          StyleGAN2Generator)
-from basicsr.ops.fused_act import FusedLeakyReLU
 from basicsr.utils.registry import ARCH_REGISTRY
 from torch import nn
-from torch.nn import functional as F
+
+from .gfpganv1_arch import ResUpBlock
+from .stylegan2_bilinear_arch import (ConvLayer, EqualConv2d, EqualLinear, ResBlock, ScaledLeakyReLU,
+                                      StyleGAN2GeneratorBilinear)
 
 
-class StyleGAN2GeneratorSFT(StyleGAN2Generator):
+class StyleGAN2GeneratorBilinearSFT(StyleGAN2GeneratorBilinear):
     """StyleGAN2 Generator with SFT modulation (Spatial Feature Transform).
+
+    It is the bilinear version. It does not use the complicated UpFirDnSmooth function that is not friendly for
+    deployment. It can be easily converted to the clean version: StyleGAN2GeneratorCSFT.
 
     Args:
         out_size (int): The spatial size of outputs.
         num_style_feat (int): Channel number of style features. Default: 512.
         num_mlp (int): Layer number of MLP style layers. Default: 8.
         channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
-        resample_kernel (list[int]): A list indicating the 1D resample kernel magnitude. A cross production will be
-            applied to extent 1D resample kernel to 2D resample kernel. Default: (1, 3, 3, 1).
         lr_mlp (float): Learning rate multiplier for mlp layers. Default: 0.01.
         narrow (float): The narrow ratio for channels. Default: 1.
         sft_half (bool): Whether to apply SFT on half of the input channels. Default: False.
@@ -29,16 +30,14 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
                  num_style_feat=512,
                  num_mlp=8,
                  channel_multiplier=2,
-                 resample_kernel=(1, 3, 3, 1),
                  lr_mlp=0.01,
                  narrow=1,
                  sft_half=False):
-        super(StyleGAN2GeneratorSFT, self).__init__(
+        super(StyleGAN2GeneratorBilinearSFT, self).__init__(
             out_size,
             num_style_feat=num_style_feat,
             num_mlp=num_mlp,
             channel_multiplier=channel_multiplier,
-            resample_kernel=resample_kernel,
             lr_mlp=lr_mlp,
             narrow=narrow)
         self.sft_half = sft_half
@@ -53,7 +52,7 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
                 truncation_latent=None,
                 inject_index=None,
                 return_latents=False):
-        """Forward function for StyleGAN2GeneratorSFT.
+        """Forward function for StyleGAN2GeneratorBilinearSFT.
 
         Args:
             styles (list[Tensor]): Sample codes of styles.
@@ -129,97 +128,13 @@ class StyleGAN2GeneratorSFT(StyleGAN2Generator):
             return image, None
 
 
-class ConvUpLayer(nn.Module):
-    """Convolutional upsampling layer. It uses bilinear upsampler + Conv.
-
-    Args:
-        in_channels (int): Channel number of the input.
-        out_channels (int): Channel number of the output.
-        kernel_size (int): Size of the convolving kernel.
-        stride (int): Stride of the convolution. Default: 1
-        padding (int): Zero-padding added to both sides of the input. Default: 0.
-        bias (bool): If ``True``, adds a learnable bias to the output. Default: ``True``.
-        bias_init_val (float): Bias initialized value. Default: 0.
-        activate (bool): Whether use activateion. Default: True.
-    """
-
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 kernel_size,
-                 stride=1,
-                 padding=0,
-                 bias=True,
-                 bias_init_val=0,
-                 activate=True):
-        super(ConvUpLayer, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.kernel_size = kernel_size
-        self.stride = stride
-        self.padding = padding
-        # self.scale is used to scale the convolution weights, which is related to the common initializations.
-        self.scale = 1 / math.sqrt(in_channels * kernel_size**2)
-
-        self.weight = nn.Parameter(torch.randn(out_channels, in_channels, kernel_size, kernel_size))
-
-        if bias and not activate:
-            self.bias = nn.Parameter(torch.zeros(out_channels).fill_(bias_init_val))
-        else:
-            self.register_parameter('bias', None)
-
-        # activation
-        if activate:
-            if bias:
-                self.activation = FusedLeakyReLU(out_channels)
-            else:
-                self.activation = ScaledLeakyReLU(0.2)
-        else:
-            self.activation = None
-
-    def forward(self, x):
-        # bilinear upsample
-        out = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)
-        # conv
-        out = F.conv2d(
-            out,
-            self.weight * self.scale,
-            bias=self.bias,
-            stride=self.stride,
-            padding=self.padding,
-        )
-        # activation
-        if self.activation is not None:
-            out = self.activation(out)
-        return out
-
-
-class ResUpBlock(nn.Module):
-    """Residual block with upsampling.
-
-    Args:
-        in_channels (int): Channel number of the input.
-        out_channels (int): Channel number of the output.
-    """
-
-    def __init__(self, in_channels, out_channels):
-        super(ResUpBlock, self).__init__()
-
-        self.conv1 = ConvLayer(in_channels, in_channels, 3, bias=True, activate=True)
-        self.conv2 = ConvUpLayer(in_channels, out_channels, 3, stride=1, padding=1, bias=True, activate=True)
-        self.skip = ConvUpLayer(in_channels, out_channels, 1, bias=False, activate=False)
-
-    def forward(self, x):
-        out = self.conv1(x)
-        out = self.conv2(out)
-        skip = self.skip(x)
-        out = (out + skip) / math.sqrt(2)
-        return out
-
-
 @ARCH_REGISTRY.register()
-class GFPGANv1(nn.Module):
+class GFPGANBilinear(nn.Module):
     """The GFPGAN architecture: Unet + StyleGAN2 decoder with SFT.
+
+    It is the bilinear version and it does not use the complicated UpFirDnSmooth function that is not friendly for
+    deployment. It can be easily converted to the clean version: GFPGANv1Clean.
+
 
     Ref: GFP-GAN: Towards Real-World Blind Face Restoration with Generative Facial Prior.
 
@@ -227,8 +142,6 @@ class GFPGANv1(nn.Module):
         out_size (int): The spatial size of outputs.
         num_style_feat (int): Channel number of style features. Default: 512.
         channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
-        resample_kernel (list[int]): A list indicating the 1D resample kernel magnitude. A cross production will be
-            applied to extent 1D resample kernel to 2D resample kernel. Default: (1, 3, 3, 1).
         decoder_load_path (str): The path to the pre-trained decoder model (usually, the StyleGAN2). Default: None.
         fix_decoder (bool): Whether to fix the decoder. Default: True.
 
@@ -245,7 +158,6 @@ class GFPGANv1(nn.Module):
             out_size,
             num_style_feat=512,
             channel_multiplier=1,
-            resample_kernel=(1, 3, 3, 1),
             decoder_load_path=None,
             fix_decoder=True,
             # for stylegan decoder
@@ -256,7 +168,7 @@ class GFPGANv1(nn.Module):
             narrow=1,
             sft_half=False):
 
-        super(GFPGANv1, self).__init__()
+        super(GFPGANBilinear, self).__init__()
         self.input_is_latent = input_is_latent
         self.different_w = different_w
         self.num_style_feat = num_style_feat
@@ -284,7 +196,7 @@ class GFPGANv1(nn.Module):
         self.conv_body_down = nn.ModuleList()
         for i in range(self.log_size, 2, -1):
             out_channels = channels[f'{2**(i - 1)}']
-            self.conv_body_down.append(ResBlock(in_channels, out_channels, resample_kernel))
+            self.conv_body_down.append(ResBlock(in_channels, out_channels))
             in_channels = out_channels
 
         self.final_conv = ConvLayer(in_channels, channels['4'], 3, bias=True, activate=True)
@@ -311,12 +223,11 @@ class GFPGANv1(nn.Module):
             channels['4'] * 4 * 4, linear_out_channel, bias=True, bias_init_val=0, lr_mul=1, activation=None)
 
         # the decoder: stylegan2 generator with SFT modulations
-        self.stylegan_decoder = StyleGAN2GeneratorSFT(
+        self.stylegan_decoder = StyleGAN2GeneratorBilinearSFT(
             out_size=out_size,
             num_style_feat=num_style_feat,
             num_mlp=num_mlp,
             channel_multiplier=channel_multiplier,
-            resample_kernel=resample_kernel,
             lr_mlp=lr_mlp,
             narrow=narrow,
             sft_half=sft_half)
@@ -351,7 +262,7 @@ class GFPGANv1(nn.Module):
                     EqualConv2d(out_channels, sft_out_channels, 3, stride=1, padding=1, bias=True, bias_init_val=0)))
 
     def forward(self, x, return_latents=False, return_rgb=True, randomize_noise=True):
-        """Forward function for GFPGANv1.
+        """Forward function for GFPGANBilinear.
 
         Args:
             x (Tensor): Input images.
@@ -399,41 +310,3 @@ class GFPGANv1(nn.Module):
                                          randomize_noise=randomize_noise)
 
         return image, out_rgbs
-
-
-@ARCH_REGISTRY.register()
-class FacialComponentDiscriminator(nn.Module):
-    """Facial component (eyes, mouth, noise) discriminator used in GFPGAN.
-    """
-
-    def __init__(self):
-        super(FacialComponentDiscriminator, self).__init__()
-        # It now uses a VGG-style architectrue with fixed model size
-        self.conv1 = ConvLayer(3, 64, 3, downsample=False, resample_kernel=(1, 3, 3, 1), bias=True, activate=True)
-        self.conv2 = ConvLayer(64, 128, 3, downsample=True, resample_kernel=(1, 3, 3, 1), bias=True, activate=True)
-        self.conv3 = ConvLayer(128, 128, 3, downsample=False, resample_kernel=(1, 3, 3, 1), bias=True, activate=True)
-        self.conv4 = ConvLayer(128, 256, 3, downsample=True, resample_kernel=(1, 3, 3, 1), bias=True, activate=True)
-        self.conv5 = ConvLayer(256, 256, 3, downsample=False, resample_kernel=(1, 3, 3, 1), bias=True, activate=True)
-        self.final_conv = ConvLayer(256, 1, 3, bias=True, activate=False)
-
-    def forward(self, x, return_feats=False):
-        """Forward function for FacialComponentDiscriminator.
-
-        Args:
-            x (Tensor): Input images.
-            return_feats (bool): Whether to return intermediate features. Default: False.
-        """
-        feat = self.conv1(x)
-        feat = self.conv3(self.conv2(feat))
-        rlt_feats = []
-        if return_feats:
-            rlt_feats.append(feat.clone())
-        feat = self.conv5(self.conv4(feat))
-        if return_feats:
-            rlt_feats.append(feat.clone())
-        out = self.final_conv(feat)
-
-        if return_feats:
-            return out, rlt_feats
-        else:
-            return out, None

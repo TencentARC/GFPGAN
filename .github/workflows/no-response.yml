@@ -1,12 +1,11 @@
 name: No Response
 
+# TODO: it seems not to work
 # Modified from: https://raw.githubusercontent.com/github/docs/main/.github/workflows/no-response.yaml
 
-# **What it does**: Closes issues that don't have enough information to be
-#                   actionable.
-# **Why we have it**: To remove the need for maintainers to remember to check
-#                     back on issues periodically to see if contributors have
-#                     responded.
+# **What it does**: Closes issues that don't have enough information to be actionable.
+# **Why we have it**: To remove the need for maintainers to remember to check back on issues periodically
+#                     to see if contributors have responded.
 # **Who does it impact**: Everyone that works on docs or docs-internal.
 
 on:

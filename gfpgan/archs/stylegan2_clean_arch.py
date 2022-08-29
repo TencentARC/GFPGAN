@@ -31,12 +31,9 @@ class ModulatedConv2d(nn.Module):
         out_channels (int): Channel number of the output.
         kernel_size (int): Size of the convolving kernel.
         num_style_feat (int): Channel number of style features.
-        demodulate (bool): Whether to demodulate in the conv layer.
-            Default: True.
-        sample_mode (str | None): Indicating 'upsample', 'downsample' or None.
-            Default: None.
-        eps (float): A value added to the denominator for numerical stability.
-            Default: 1e-8.
+        demodulate (bool): Whether to demodulate in the conv layer. Default: True.
+        sample_mode (str | None): Indicating 'upsample', 'downsample' or None. Default: None.
+        eps (float): A value added to the denominator for numerical stability. Default: 1e-8.
     """
 
     def __init__(self,
@@ -87,6 +84,7 @@ class ModulatedConv2d(nn.Module):
 
         weight = weight.view(b * self.out_channels, c, self.kernel_size, self.kernel_size)
 
+        # upsample or downsample if necessary
         if self.sample_mode == 'upsample':
             x = F.interpolate(x, scale_factor=2, mode='bilinear', align_corners=False)
         elif self.sample_mode == 'downsample':
@@ -101,14 +99,12 @@ class ModulatedConv2d(nn.Module):
         return out
 
     def __repr__(self):
-        return (f'{self.__class__.__name__}(in_channels={self.in_channels}, '
-                f'out_channels={self.out_channels}, '
-                f'kernel_size={self.kernel_size}, '
-                f'demodulate={self.demodulate}, sample_mode={self.sample_mode})')
+        return (f'{self.__class__.__name__}(in_channels={self.in_channels}, out_channels={self.out_channels}, '
+                f'kernel_size={self.kernel_size}, demodulate={self.demodulate}, sample_mode={self.sample_mode})')
 
 
 class StyleConv(nn.Module):
-    """Style conv.
+    """Style conv used in StyleGAN2.
 
     Args:
         in_channels (int): Channel number of the input.
@@ -116,8 +112,7 @@ class StyleConv(nn.Module):
         kernel_size (int): Size of the convolving kernel.
         num_style_feat (int): Channel number of style features.
         demodulate (bool): Whether demodulate in the conv layer. Default: True.
-        sample_mode (str | None): Indicating 'upsample', 'downsample' or None.
-            Default: None.
+        sample_mode (str | None): Indicating 'upsample', 'downsample' or None. Default: None.
     """
 
     def __init__(self, in_channels, out_channels, kernel_size, num_style_feat, demodulate=True, sample_mode=None):
@@ -144,7 +139,7 @@ class StyleConv(nn.Module):
 
 
 class ToRGB(nn.Module):
-    """To RGB from features.
+    """To RGB (image space) from features.
 
     Args:
         in_channels (int): Channel number of input.
@@ -204,8 +199,7 @@ class StyleGAN2GeneratorClean(nn.Module):
         out_size (int): The spatial size of outputs.
         num_style_feat (int): Channel number of style features. Default: 512.
         num_mlp (int): Layer number of MLP style layers. Default: 8.
-        channel_multiplier (int): Channel multiplier for large networks of
-            StyleGAN2. Default: 2.
+        channel_multiplier (int): Channel multiplier for large networks of StyleGAN2. Default: 2.
         narrow (float): Narrow ratio for channels. Default: 1.0.
     """
 
@@ -222,6 +216,7 @@ class StyleGAN2GeneratorClean(nn.Module):
         # initialization
         default_init_weights(self.style_mlp, scale=1, bias_fill=0, a=0.2, mode='fan_in', nonlinearity='leaky_relu')
 
+        # channel list
         channels = {
             '4': int(512 * narrow),
             '8': int(512 * narrow),
@@ -309,21 +304,17 @@ class StyleGAN2GeneratorClean(nn.Module):
                 truncation_latent=None,
                 inject_index=None,
                 return_latents=False):
-        """Forward function for StyleGAN2Generator.
+        """Forward function for StyleGAN2GeneratorClean.
 
         Args:
             styles (list[Tensor]): Sample codes of styles.
-            input_is_latent (bool): Whether input is latent style.
-                Default: False.
+            input_is_latent (bool): Whether input is latent style. Default: False.
             noise (Tensor | None): Input noise or None. Default: None.
-            randomize_noise (bool): Randomize noise, used when 'noise' is
-                False. Default: True.
-            truncation (float): TODO. Default: 1.
-            truncation_latent (Tensor | None): TODO. Default: None.
-            inject_index (int | None): The injection index for mixing noise.
-                Default: None.
-            return_latents (bool): Whether to return style latents.
-                Default: False.
+            randomize_noise (bool): Randomize noise, used when 'noise' is False. Default: True.
+            truncation (float): The truncation ratio. Default: 1.
+            truncation_latent (Tensor | None): The truncation latent tensor. Default: None.
+            inject_index (int | None): The injection index for mixing noise. Default: None.
+            return_latents (bool): Whether to return style latents. Default: False.
         """
         # style codes -> latents with Style MLP layer
         if not input_is_latent:
@@ -340,7 +331,7 @@ class StyleGAN2GeneratorClean(nn.Module):
             for style in styles:
                 style_truncation.append(truncation_latent + truncation * (style - truncation_latent))
             styles = style_truncation
-        # get style latent with injection
+        # get style latents with injection
         if len(styles) == 1:
             inject_index = self.num_latent
 
@@ -366,7 +357,7 @@ class StyleGAN2GeneratorClean(nn.Module):
                                                         noise[2::2], self.to_rgbs):
             out = conv1(out, latent[:, i], noise=noise1)
             out = conv2(out, latent[:, i + 1], noise=noise2)
-            skip = to_rgb(out, latent[:, i + 2], skip)
+            skip = to_rgb(out, latent[:, i + 2], skip)  # feature back to the rgb space
             i += 2
 
         image = skip

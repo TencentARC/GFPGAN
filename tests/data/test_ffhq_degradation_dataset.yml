@@ -1,0 +1,24 @@
+name: UnitTest
+type: FFHQDegradationDataset
+dataroot_gt: tests/data/gt
+io_backend:
+  type: disk
+
+use_hflip: true
+mean: [0.5, 0.5, 0.5]
+std: [0.5, 0.5, 0.5]
+out_size: 512
+
+blur_kernel_size: 41
+kernel_list: ['iso', 'aniso']
+kernel_prob: [0.5, 0.5]
+blur_sigma: [0.1, 10]
+downsample_range: [0.8, 8]
+noise_range: [0, 20]
+jpeg_range: [60, 100]
+
+# color jitter and gray
+color_jitter_prob: 1
+color_jitter_shift: 20
+color_jitter_pt_prob: 1
+gray_prob: 1
