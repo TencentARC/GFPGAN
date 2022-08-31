@@ -1,134 +1,97 @@
-import subprocess
-
-subprocess.call(["sh", "./run_setup.sh"])
-
-import warnings
-import tempfile
+# flake8: noqa
+# This file is used for deploying replicate models
 import os
-from pathlib import Path
-import argparse
-import glob
 
-import shutil
-from basicsr.utils import imwrite
-import torch
+os.system('python setup.py develop')
+os.system('pip install realesrgan')
+
 import cv2
-import cog
-from realesrgan import RealESRGANer
+import shutil
+import tempfile
+import torch
+from basicsr.archs.srvgg_arch import SRVGGNetCompact
+
 from gfpgan import GFPGANer
 
+try:
+    from cog import BasePredictor, Input, Path
+    from realesrgan.utils import RealESRGANer
+except Exception:
+    print('please install cog and realesrgan package')
 
-class Predictor(cog.Predictor):
+
+class Predictor(BasePredictor):
+
     def setup(self):
-        parser = argparse.ArgumentParser()
+        # download weights
+        if not os.path.exists('realesr-general-x4v3.pth'):
+            os.system(
+                'wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth -P .')
+        if not os.path.exists('GFPGANv1.2.pth'):
+            os.system('wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.2.pth -P .')
+        if not os.path.exists('GFPGANv1.3.pth'):
+            os.system('wget https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth -P .')
 
-        parser.add_argument("--upscale", type=int, default=2)
-        parser.add_argument("--arch", type=str, default="clean")
-        parser.add_argument("--channel", type=int, default=2)
-        parser.add_argument(
-            "--model_path",
-            type=str,
-            default="experiments/pretrained_models/GFPGANCleanv1-NoCE-C2.pth",
-        )
-        parser.add_argument("--bg_upsampler", type=str, default="realesrgan")
-        parser.add_argument("--bg_tile", type=int, default=400)
-        parser.add_argument("--test_path", type=str, default="inputs/whole_imgs")
-        parser.add_argument(
-            "--suffix", type=str, default=None, help="Suffix of the restored faces"
-        )
-        parser.add_argument("--only_center_face", action="store_true")
-        parser.add_argument("--aligned", action="store_true")
-        parser.add_argument("--paste_back", action="store_false")
-        parser.add_argument("--save_root", type=str, default="results")
+        # background enhancer with RealESRGAN
+        model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
+        model_path = 'realesr-general-x4v3.pth'
+        half = True if torch.cuda.is_available() else False
+        upsampler = RealESRGANer(scale=4, model_path=model_path, model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
 
-        self.args = parser.parse_args(
-            ["--upscale", "2", "--test_path", "cog_temp", "--save_root", "results"]
-        )
-        os.makedirs(self.args.test_path, exist_ok=True)
-        # background upsampler
-        if self.args.bg_upsampler == "realesrgan":
-            if not torch.cuda.is_available():  # CPU
+        # Use GFPGAN for face enhancement
+        self.face_enhancer_v3 = GFPGANer(
+            model_path='GFPGANv1.3.pth', upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=upsampler)
+        self.face_enhancer_v2 = GFPGANer(
+            model_path='GFPGANv1.2.pth', upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=upsampler)
+        os.makedirs('output', exist_ok=True)
 
-                warnings.warn(
-                    "The unoptimized RealESRGAN is very slow on CPU. We do not use it. "
-                    "If you really want to use it, please modify the corresponding codes."
-                )
-                bg_upsampler = None
-            else:
-                bg_upsampler = RealESRGANer(
-                    scale=2,
-                    model_path="https://github.com/xinntao/Real-ESRGAN/releases"
-                    "/download/v0.2.1/RealESRGAN_x2plus.pth",
-                    tile=self.args.bg_tile,
-                    tile_pad=10,
-                    pre_pad=0,
-                    half=True,
-                )  # need to set False in CPU mode
-        else:
-            bg_upsampler = None
-
-        # set up GFPGAN restorer
-        self.restorer = GFPGANer(
-            model_path=self.args.model_path,
-            upscale=self.args.upscale,
-            arch=self.args.arch,
-            channel_multiplier=self.args.channel,
-            bg_upsampler=bg_upsampler,
-        )
-
-    @cog.input("image", type=Path, help="input image")
-    def predict(self, image):
+    def predict(
+        self,
+        img: Path = Input(description='Input'),
+        version: str = Input(description='GFPGAN version', choices=['v1.2', 'v1.3'], default='v1.3'),
+        scale: float = Input(description='Rescaling factor', default=2)
+    ) -> Path:
         try:
-            input_dir = self.args.test_path
+            img = cv2.imread(str(img), cv2.IMREAD_UNCHANGED)
+            if len(img.shape) == 3 and img.shape[2] == 4:
+                img_mode = 'RGBA'
+            else:
+                img_mode = None
 
-            input_path = os.path.join(input_dir, os.path.basename(image))
-            shutil.copy(str(image), input_path)
+            h, w = img.shape[0:2]
+            if h < 300:
+                img = cv2.resize(img, (w * 2, h * 2), interpolation=cv2.INTER_LANCZOS4)
 
-            os.makedirs(self.args.save_root, exist_ok=True)
+            if version == 'v1.2':
+                face_enhancer = self.face_enhancer_v2
+            else:
+                face_enhancer = self.face_enhancer_v3
+            try:
+                _, _, output = face_enhancer.enhance(img, has_aligned=False, only_center_face=False, paste_back=True)
+            except RuntimeError as error:
+                print('Error', error)
+            else:
+                extension = 'png'
 
-            img_list = sorted(glob.glob(os.path.join(input_dir, "*")))
-
-            out_path = Path(tempfile.mkdtemp()) / "output.png"
-
-            for img_path in img_list:
-                # read image
-                img_name = os.path.basename(img_path)
-                print(f"Processing {img_name} ...")
-                basename, ext = os.path.splitext(img_name)
-                input_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
-
-                cropped_faces, restored_faces, restored_img = self.restorer.enhance(
-                    input_img,
-                    has_aligned=self.args.aligned,
-                    only_center_face=self.args.only_center_face,
-                    paste_back=self.args.paste_back,
-                )
-
-                imwrite(restored_img, str(out_path))
-                clean_folder(self.args.test_path)
-
-                # save faces
-                for idx, (cropped_face, restored_face) in enumerate(
-                    zip(cropped_faces, restored_faces)
-                ):
-                    # save cropped face
-                    save_crop_path = os.path.join(
-                        self.args.save_root, "cropped_faces", f"{basename}_{idx:02d}.png"
-                    )
-                    imwrite(cropped_face, save_crop_path)
-                    # save restored face
-                    if self.args.suffix is not None:
-                        save_face_name = f"{basename}_{idx:02d}_{self.args.suffix}.png"
-                    else:
-                        save_face_name = f"{basename}_{idx:02d}.png"
-                    save_restore_path = os.path.join(
-                        self.args.save_root, "restored_faces", save_face_name
-                    )
-                    imwrite(restored_face, save_restore_path)
-                    imwrite(restored_img, str(out_path))
+            try:
+                if scale != 2:
+                    interpolation = cv2.INTER_AREA if scale < 2 else cv2.INTER_LANCZOS4
+                    h, w = img.shape[0:2]
+                    output = cv2.resize(output, (int(w * scale / 2), int(h * scale / 2)), interpolation=interpolation)
+            except Exception as error:
+                print('wrong scale input.', error)
+            if img_mode == 'RGBA':  # RGBA images should be saved in png format
+                extension = 'png'
+            else:
+                extension = 'jpg'
+            save_path = f'output/out.{extension}'
+            cv2.imwrite(save_path, output)
+            out_path = os.path.join(tempfile.mkdtemp(), 'output.png')
+            cv2.imwrite(str(out_path), output)
+        except Exception as error:
+            print('global exception', error)
         finally:
-            clean_folder(self.args.test_path)
-
+            clean_folder('output')
         return out_path
 
 
@@ -141,4 +104,4 @@ def clean_folder(folder):
             elif os.path.isdir(file_path):
                 shutil.rmtree(file_path)
         except Exception as e:
-            print("Failed to delete %s. Reason: %s" % (file_path, e))
+            print(f'Failed to delete {file_path}. Reason: {e}')

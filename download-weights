@@ -1,3 +1,0 @@
-#!/bin/sh
-
-wget https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth -P experiments/pretrained_models
