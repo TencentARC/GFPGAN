@@ -14,7 +14,6 @@ import shutil
 import tempfile
 import torch
 from basicsr.archs.srvgg_arch import SRVGGNetCompact
-from pathlib import Path
 
 from gfpgan import GFPGANer
 
