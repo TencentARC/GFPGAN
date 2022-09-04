@@ -1,7 +1,8 @@
 # flake8: noqa
 # This file is used for deploying replicate models
-# running: cog predict -i img=@inputs/whole_imgs/10045.png -i version='v1.3' -i scale=2
-# push:
+# running: cog predict -i img=@inputs/whole_imgs/10045.png -i version='v1.4' -i scale=2
+# push: cog push r8.im/tencentarc/gfpgan
+# push (backup): cog push r8.im/xinntao/gfpgan
 
 import os
 
