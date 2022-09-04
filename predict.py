@@ -25,7 +25,7 @@ class Predictor(BasePredictor):
 
     def setup(self):
         # download weights
-        if not os.path.exists('realesr-general-x4v3.pth'):
+        if not os.path.exists('gfpgan/weights/realesr-general-x4v3.pth'):
             os.system(
                 'wget https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.5.0/realesr-general-x4v3.pth -P ./gfpgan/weights')
         if not os.path.exists('gfpgan/weights/GFPGANv1.2.pth'):
@@ -37,7 +37,7 @@ class Predictor(BasePredictor):
 
         # background enhancer with RealESRGAN
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=32, upscale=4, act_type='prelu')
-        model_path = 'realesr-general-x4v3.pth'
+        model_path = 'gfpgan/weights/realesr-general-x4v3.pth'
         half = True if torch.cuda.is_available() else False
         self.upsampler = RealESRGANer(scale=4, model_path=model_path, model=model, tile=0, tile_pad=10, pre_pad=0, half=half)
 
