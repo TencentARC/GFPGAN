@@ -19,4 +19,4 @@ build:
     - "basicsr==1.4.2"
     - "facexlib==0.2.5"
 
-predict: "predict.py:Predictor"
+predict: "cog_predict.py:Predictor"
