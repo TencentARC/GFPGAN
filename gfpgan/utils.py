@@ -80,7 +80,8 @@ class GFPGANer():
             det_model='retinaface_resnet50',
             save_ext='png',
             use_parse=True,
-            device=self.device)
+            device=self.device,
+            model_rootpath='gfpgan/weights')
 
         if model_path.startswith('https://'):
             model_path = load_file_from_url(
