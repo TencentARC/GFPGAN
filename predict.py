@@ -10,6 +10,7 @@ import shutil
 import tempfile
 import torch
 from basicsr.archs.srvgg_arch import SRVGGNetCompact
+from pathlib import Path
 
 from gfpgan import GFPGANer
 
@@ -93,7 +94,7 @@ class Predictor(BasePredictor):
                 extension = 'jpg'
             save_path = f'output/out.{extension}'
             cv2.imwrite(save_path, output)
-            out_path = os.path.join(tempfile.mkdtemp(), 'output.png')
+            out_path = Path(tempfile.mkdtemp()) /  'output.png'
             cv2.imwrite(str(out_path), output)
         except Exception as error:
             print('global exception', error)
