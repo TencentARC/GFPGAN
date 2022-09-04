@@ -53,7 +53,7 @@ class Predictor(BasePredictor):
     def predict(
         self,
         img: Path = Input(description='Input'),
-        version: str = Input(description='GFPGAN version. v1.3: more smooth \n v1.4: slightly more details and better identity', choices=['v1.2', 'v1.3', 'v1.4'], default='v1.4'),
+        version: str = Input(description='GFPGAN version. v1.3: better quality. v1.4: more details and better identity.', choices=['v1.2', 'v1.4'], default='v1.4'),
         scale: float = Input(description='Rescaling factor', default=2)
     ) -> Path:
         print(img, version, scale)
