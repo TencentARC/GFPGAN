@@ -1,5 +1,8 @@
 # flake8: noqa
 # This file is used for deploying replicate models
+# running: cog predict -i img=@inputs/whole_imgs/10045.png -i version='v1.3' -i scale=2
+# push:
+
 import os
 
 os.system('python setup.py develop')
@@ -52,6 +55,7 @@ class Predictor(BasePredictor):
         version: str = Input(description='GFPGAN version', choices=['v1.2', 'v1.3', 'v1.4'], default='v1.4'),
         scale: float = Input(description='Rescaling factor', default=2)
     ) -> Path:
+        print(img, version, scale)
         try:
             img = cv2.imread(str(img), cv2.IMREAD_UNCHANGED)
             if len(img.shape) == 3 and img.shape[2] == 4:
