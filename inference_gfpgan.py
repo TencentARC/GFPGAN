@@ -90,6 +90,10 @@ def main():
         arch = 'clean'
         channel_multiplier = 2
         model_name = 'GFPGANv1.3'
+    elif args.version == '1.4':
+        arch = 'clean'
+        channel_multiplier = 2
+        model_name = 'GFPGANv1.4'
     else:
         raise ValueError(f'Wrong model version {args.version}.')
 
