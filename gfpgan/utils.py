@@ -80,8 +80,7 @@ class GFPGANer():
             det_model='retinaface_resnet50',
             save_ext='png',
             use_parse=True,
-            device=self.device,
-            model_rootpath='gfpgan/weights')
+            device=self.device)
 
         if model_path.startswith('https://'):
             model_path = load_file_from_url(
@@ -114,14 +113,14 @@ class GFPGANer():
         # face restoration
         for cropped_face in self.face_helper.cropped_faces:
             # prepare data
-            cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=True, float32=True)
+            cropped_face_t = img2tensor(cropped_face / 255., bgr2rgb=False, float32=True)
             normalize(cropped_face_t, (0.5, 0.5, 0.5), (0.5, 0.5, 0.5), inplace=True)
             cropped_face_t = cropped_face_t.unsqueeze(0).to(self.device)
 
             try:
-                output = self.gfpgan(cropped_face_t, return_rgb=False)[0]
+                output = self.gfpgan(cropped_face_t, return_rgb=True)[0]
                 # convert to image
-                restored_face = tensor2img(output.squeeze(0), rgb2bgr=True, min_max=(-1, 1))
+                restored_face = tensor2img(output.squeeze(0), rgb2bgr=False, min_max=(-1, 1))
             except RuntimeError as error:
                 print(f'\tFailed inference for GFPGAN: {error}.')
                 restored_face = cropped_face
