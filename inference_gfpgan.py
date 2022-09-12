@@ -41,6 +41,7 @@ def main():
         type=str,
         default='auto',
         help='Image extension. Options: auto | jpg | png, auto means using the same extension as inputs. Default: auto')
+    parser.add_argument('-w', '--weight', type=float, default=0.5, help='Adjustable weights for CodeFormer.')
     args = parser.parse_args()
 
     args = parser.parse_args()
@@ -82,23 +83,42 @@ def main():
         arch = 'original'
         channel_multiplier = 1
         model_name = 'GFPGANv1'
+        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth'
     elif args.version == '1.2':
         arch = 'clean'
         channel_multiplier = 2
         model_name = 'GFPGANCleanv1-NoCE-C2'
+        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth'
     elif args.version == '1.3':
         arch = 'clean'
         channel_multiplier = 2
         model_name = 'GFPGANv1.3'
+        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth'
+    elif args.version == '1.4':
+        arch = 'clean'
+        channel_multiplier = 2
+        model_name = 'GFPGANv1.4'
+        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth'
+    elif args.version == 'RestoreFormer':
+        arch = 'RestoreFormer'
+        channel_multiplier = 2
+        model_name = 'RestoreFormer'
+        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
+    elif args.version == 'CodeFormer':
+        arch = 'CodeFormer'
+        channel_multiplier = 2
+        model_name = 'CodeFormer'
+        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/CodeFormer.pth'
     else:
         raise ValueError(f'Wrong model version {args.version}.')
 
     # determine model paths
     model_path = os.path.join('experiments/pretrained_models', model_name + '.pth')
     if not os.path.isfile(model_path):
-        model_path = os.path.join('realesrgan/weights', model_name + '.pth')
+        model_path = os.path.join('gfpgan/weights', model_name + '.pth')
     if not os.path.isfile(model_path):
-        raise ValueError(f'Model {model_name} does not exist.')
+        # download pre-trained models from url
+        model_path = url
 
     restorer = GFPGANer(
         model_path=model_path,
@@ -117,7 +137,11 @@ def main():
 
         # restore faces and background if necessary
         cropped_faces, restored_faces, restored_img = restorer.enhance(
-            input_img, has_aligned=args.aligned, only_center_face=args.only_center_face, paste_back=True)
+            input_img,
+            has_aligned=args.aligned,
+            only_center_face=args.only_center_face,
+            paste_back=True,
+            weight=args.weight)
 
         # save faces
         for idx, (cropped_face, restored_face) in enumerate(zip(cropped_faces, restored_faces)):

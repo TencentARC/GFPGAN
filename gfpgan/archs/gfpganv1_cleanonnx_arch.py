@@ -5,10 +5,10 @@ from basicsr.utils.registry import ARCH_REGISTRY
 from torch import nn
 from torch.nn import functional as F
 
-from .stylegan2_clean_arch import StyleGAN2GeneratorClean
+from .stylegan2_cleanonnx_arch import StyleGAN2GeneratorCleanONNX
 
 
-class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
+class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorCleanONNX):
     """StyleGAN2 Generator with SFT modulation (Spatial Feature Transform).
 
     It is the clean version without custom compiled CUDA extensions used in StyleGAN2.
@@ -100,6 +100,7 @@ class StyleGAN2GeneratorCSFT(StyleGAN2GeneratorClean):
                 # SFT part to combine the conditions
                 if self.sft_half:  # only apply SFT to half of the channels
                     out_same, out_sft = torch.split(out, int(out.size(1) // 2), dim=1)
+                    # print(out_sft.size(), conditions[i - 1].size(), conditions[i].size())
                     out_sft = out_sft * conditions[i - 1] + conditions[i]
                     out = torch.cat([out_same, out_sft], dim=1)
                 else:  # apply SFT to all the channels
@@ -150,7 +151,7 @@ class ResBlock(nn.Module):
 
 
 @ARCH_REGISTRY.register()
-class GFPGANv1Clean(nn.Module):
+class GFPGANv1CleanONNX(nn.Module):
     """The GFPGAN architecture: Unet + StyleGAN2 decoder with SFT.
 
     It is the clean version without custom compiled CUDA extensions used in StyleGAN2.
@@ -185,7 +186,7 @@ class GFPGANv1Clean(nn.Module):
             narrow=1,
             sft_half=False):
 
-        super(GFPGANv1Clean, self).__init__()
+        super(GFPGANv1CleanONNX, self).__init__()
         self.input_is_latent = input_is_latent
         self.different_w = different_w
         self.num_style_feat = num_style_feat
@@ -274,7 +275,7 @@ class GFPGANv1Clean(nn.Module):
                     nn.Conv2d(out_channels, out_channels, 3, 1, 1), nn.LeakyReLU(0.2, True),
                     nn.Conv2d(out_channels, sft_out_channels, 3, 1, 1)))
 
-    def forward(self, x, return_latents=False, return_rgb=True, randomize_noise=True, **kwargs):
+    def forward(self, x, return_latents=False, return_rgb=True, randomize_noise=True):
         """Forward function for GFPGANv1Clean.
 
         Args:
@@ -321,4 +322,4 @@ class GFPGANv1Clean(nn.Module):
                                          input_is_latent=self.input_is_latent,
                                          randomize_noise=randomize_noise)
 
-        return image, out_rgbs
+        return image

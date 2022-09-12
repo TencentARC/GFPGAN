@@ -350,7 +350,7 @@ class GFPGANv1(nn.Module):
                     ScaledLeakyReLU(0.2),
                     EqualConv2d(out_channels, sft_out_channels, 3, stride=1, padding=1, bias=True, bias_init_val=0)))
 
-    def forward(self, x, return_latents=False, return_rgb=True, randomize_noise=True):
+    def forward(self, x, return_latents=False, return_rgb=True, randomize_noise=True, **kwargs):
         """Forward function for GFPGANv1.
 
         Args:
@@ -416,7 +416,7 @@ class FacialComponentDiscriminator(nn.Module):
         self.conv5 = ConvLayer(256, 256, 3, downsample=False, resample_kernel=(1, 3, 3, 1), bias=True, activate=True)
         self.final_conv = ConvLayer(256, 1, 3, bias=True, activate=False)
 
-    def forward(self, x, return_feats=False):
+    def forward(self, x, return_feats=False, **kwargs):
         """Forward function for FacialComponentDiscriminator.
 
         Args:
