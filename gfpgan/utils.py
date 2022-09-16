@@ -75,10 +75,6 @@ class GFPGANer():
         elif arch == 'RestoreFormer':
             from gfpgan.archs.restoreformer_arch import RestoreFormer
             self.gfpgan = RestoreFormer()
-        elif arch == 'CodeFormer':
-            from gfpgan.archs.codeformer_arch import CodeFormer
-            self.gfpgan = CodeFormer(
-                dim_embd=512, codebook_size=1024, n_head=8, n_layers=9, connect_list=['32', '64', '128', '256'])
         # initialize face helper
         self.face_helper = FaceRestoreHelper(
             upscale,

@@ -41,7 +41,7 @@ def main():
         type=str,
         default='auto',
         help='Image extension. Options: auto | jpg | png, auto means using the same extension as inputs. Default: auto')
-    parser.add_argument('-w', '--weight', type=float, default=0.5, help='Adjustable weights for CodeFormer.')
+    parser.add_argument('-w', '--weight', type=float, default=0.5, help='Adjustable weights.')
     args = parser.parse_args()
 
     args = parser.parse_args()
@@ -104,11 +104,6 @@ def main():
         channel_multiplier = 2
         model_name = 'RestoreFormer'
         url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
-    elif args.version == 'CodeFormer':
-        arch = 'CodeFormer'
-        channel_multiplier = 2
-        model_name = 'CodeFormer'
-        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/CodeFormer.pth'
     else:
         raise ValueError(f'Wrong model version {args.version}.')
 
