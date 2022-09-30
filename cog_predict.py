@@ -132,7 +132,7 @@ class Predictor(BasePredictor):
                 if scale != 2:
                     interpolation = cv2.INTER_AREA if scale < 2 else cv2.INTER_LANCZOS4
                     h, w = img.shape[0:2]
-                    output = cv2.resize(output, (int(w * scale / 2), int(h * scale / 2)), interpolation=interpolation)
+                    output = cv2.resize(output, (int(w * scale), int(h * scale)), interpolation=interpolation)
             except Exception as error:
                 print('wrong scale input.', error)
 
