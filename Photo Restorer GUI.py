@@ -22,8 +22,10 @@ from tkinter import (
     scrolledtext,
     )
 
-
-                    
+# empty log.txt
+with open("log.txt","w") as f:
+    None
+    
 class Root(Tk):
     def __init__(self):
         super().__init__()
@@ -57,10 +59,7 @@ class Root(Tk):
             self.selected_languaje = "en"
             self.available_languages = ["en","es",]
             self.output = os.path.expanduser(os.path.join("~", "Documents", "Photo Restorer"))
-
-        # empty log.txt
-        with open("log.txt","w") as f:
-            None
+        
             
         # load images
         self.bg_img = PhotoImage(file="assets/bg.png")
@@ -73,11 +72,11 @@ class Root(Tk):
         self.main_frame = Frame(width = 406,height = 326)
         self.main_frame.pack_propagate(False)
         self.main_frame.pack()
-        Label(self.main_frame, image=self.bg_img, bg="#00ffff").place(x=0, y=0)
+        Label(self.main_frame, image=self.bg_img, bg="#00ffff", width = 406, height = 326).place(x=0, y=0)
         Frame(self.main_frame, bg="black", height=1).pack(pady=22)# separator
         # create loading message
         self.frame_loading = Frame(bg="#000022", width = 406, height = 326)
-        Label(self.frame_loading, image=self.bg_img).place(x=0,y=0)
+        Label(self.frame_loading, image=self.bg_img, width = 406,height = 326).place(x=0,y=0)
         self.loading = Label(self.frame_loading, bg="#000022", fg="light blue", font=("console",15))
         self.loading.place(x=110, y=60)
         # create console log
@@ -592,11 +591,17 @@ class Root(Tk):
 
 
 
-
-window = Root()
-window.protocol("WM_DELETE_WINDOW", window.stop)
-window.title("Photo Restorer GFPGAN Artificial Intelligence")
-window.configure(bg="gray")
-window.geometry("+400+200")
-if __name__ == "__main__":
-    window.mainloop()
+try:
+    window = Root()
+    window.protocol("WM_DELETE_WINDOW", window.stop)
+    window.title("Photo Restorer GFPGAN Artificial Intelligence")
+    window.configure(bg="gray")
+    window.geometry("410x330+400+322")
+    window.resizable(0,0)
+    if __name__ == "__main__":
+        window.mainloop()
+except:
+    with open("log.txt","a") as f:
+        f.write("\n")
+        traceback.print_exc(file=f)
+        raise
