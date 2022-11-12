@@ -60,6 +60,31 @@ def main():
     if args.bg_upsampler == 'realesrgan':
         if not torch.cuda.is_available():  # CPU
             import warnings
+
+            warnings.warn('Here is going to run `--bg_upsampler=realesrgan` in CPU (not CUDA) power.')
+
+            if torch.__version__.endswith('+cpu'):
+                warnings.warn('This is because installed version of '
+                              'PyTorch is `%s`.' % (torch.__version__, ))
+                warnings.warn('If PyTorch has Compute Platform `CUDA 11.6` support, '
+                              'the version will be displayed like `1.12.1+cu116`')
+                warnings.warn('If you are sure to have CUDA enabled device, '
+                              'you can try to install CUDA capable PyTorch. '
+                              'Visit https://pytorch.org/get-started/locally/ '
+                              'and check START LOCALLY section.')
+                warnings.warn('In 12 Nov 2022, this is useful to install CUDA powered PyTorch: '
+                              'pip3 install torch==1.12.1+cu116 --index-url https://download.pytorch.org/whl/cu116')
+                warnings.warn('If you already have PyTorch installed, it needs to be uninstalled. try: '
+                              'pip3 uninstall torch')
+            else:
+                warnings.warn('This is because no CUDA capable device is detected.')
+
+            warnings.warn('To print PyTorch version by yourself, try: '
+                          'python -c "import torch; print(torch.__version__)"')
+
+            warnings.warn('To verify if PyTorch can detect CUDA, try: '
+                          'python -c "import torch; print(torch.cuda.is_available())"')
+
             warnings.warn('The unoptimized RealESRGAN is slow on CPU. We do not use it. '
                           'If you really want to use it, please modify the corresponding codes.')
             bg_upsampler = None
