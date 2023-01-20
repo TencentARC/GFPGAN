@@ -1,7 +1,7 @@
 <p align="center">
   <img src="assets/gfpgan_logo.png" height=130>
 </p>
-## <div align="center"><b><a href="README.md">English</a> | <a href="README_CN.md">简体中文</a></b></div>
+##  <div align="center"><b><a href="README.md">English</a> | <a href="README_CN.md">简体中文</a></b></div>
 
 <div align="center">
 <!-- <a href="https://twitter.com/_Xintao_" style="text-decoration:none;">
