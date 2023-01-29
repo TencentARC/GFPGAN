@@ -63,7 +63,7 @@ class Root(Tk):
             
         # load images
         self.bg_img = PhotoImage(file="assets/bg.png")
-        self.wm_iconbitmap(bitmap="assets/icon.ico")
+        #self.wm_iconbitmap(bitmap="assets/icon.ico")
 
         
         # --------  create all buttons and frames in main menu  ----------
