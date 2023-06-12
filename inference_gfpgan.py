@@ -113,7 +113,6 @@ def main():
     # determine model paths
     model_path = os.path.join(snapshot_folder, model_name + '.pth')
     if not os.path.isfile(model_path):
-        print(model_path)
         raise ValueError(f'Model not found {model_name}.')
 
     restorer = GFPGANer(
