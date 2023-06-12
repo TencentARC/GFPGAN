@@ -5,8 +5,12 @@ import numpy as np
 import os
 import torch
 from basicsr.utils import imwrite
+from huggingface_hub import snapshot_download
 
 from gfpgan import GFPGANer
+
+REALESRGAN_REPO_ID = 'leonelhs/realesrgan'
+GFPGAN_REPO_ID = 'leonelhs/gfpgan'
 
 
 def main():
@@ -66,10 +70,12 @@ def main():
         else:
             from basicsr.archs.rrdbnet_arch import RRDBNet
             from realesrgan import RealESRGANer
+            snapshot_folder = snapshot_download(repo_id=REALESRGAN_REPO_ID)
+            model_path = os.path.join(snapshot_folder, "RealESRGAN_x2plus.pth")
             model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
             bg_upsampler = RealESRGANer(
                 scale=2,
-                model_path='https://github.com/xinntao/Real-ESRGAN/releases/download/v0.2.1/RealESRGAN_x2plus.pth',
+                model_path=model_path,
                 model=model,
                 tile=args.bg_tile,
                 tile_pad=10,
@@ -79,41 +85,35 @@ def main():
         bg_upsampler = None
 
     # ------------------------ set up GFPGAN restorer ------------------------
+    snapshot_folder = snapshot_download(repo_id=GFPGAN_REPO_ID)
+
     if args.version == '1':
         arch = 'original'
         channel_multiplier = 1
         model_name = 'GFPGANv1'
-        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v0.1.0/GFPGANv1.pth'
     elif args.version == '1.2':
         arch = 'clean'
         channel_multiplier = 2
         model_name = 'GFPGANCleanv1-NoCE-C2'
-        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v0.2.0/GFPGANCleanv1-NoCE-C2.pth'
     elif args.version == '1.3':
         arch = 'clean'
         channel_multiplier = 2
         model_name = 'GFPGANv1.3'
-        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.3.pth'
     elif args.version == '1.4':
         arch = 'clean'
         channel_multiplier = 2
         model_name = 'GFPGANv1.4'
-        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.0/GFPGANv1.4.pth'
     elif args.version == 'RestoreFormer':
         arch = 'RestoreFormer'
         channel_multiplier = 2
         model_name = 'RestoreFormer'
-        url = 'https://github.com/TencentARC/GFPGAN/releases/download/v1.3.4/RestoreFormer.pth'
     else:
         raise ValueError(f'Wrong model version {args.version}.')
 
     # determine model paths
-    model_path = os.path.join('experiments/pretrained_models', model_name + '.pth')
+    model_path = os.path.join(snapshot_folder, model_name + '.pth')
     if not os.path.isfile(model_path):
-        model_path = os.path.join('gfpgan/weights', model_name + '.pth')
-    if not os.path.isfile(model_path):
-        # download pre-trained models from url
-        model_path = url
+        raise ValueError(f'Model not found {model_name}.')
 
     restorer = GFPGANer(
         model_path=model_path,
