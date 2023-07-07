@@ -34,7 +34,16 @@ class GFPGANer():
         self.bg_upsampler = bg_upsampler
 
         # initialize model
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu') if device is None else device
+        if device is None:
+            if torch.cuda.is_available():
+                device = torch.device('cuda')
+            elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
+                device = torch.device('mps')
+            else:
+                device = torch.device('cpu')
+
+        self.device = device
+
         # initialize the GFP-GAN
         if arch == 'clean':
             self.gfpgan = GFPGANv1Clean(
