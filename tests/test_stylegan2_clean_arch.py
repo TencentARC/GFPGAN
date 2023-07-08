@@ -53,8 +53,8 @@ def test_stylegan2generatorclean():
 
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
         net = StyleGAN2GeneratorClean(
-            out_size=32, num_style_feat=512, num_mlp=8, channel_multiplier=1, narrow=0.5).to(mps_device).eval()
-        style = torch.rand((1, 512), dtype=torch.float32, device=mps_device)
+            out_size=32, num_style_feat=512, num_mlp=8, channel_multiplier=1, narrow=0.5).to(torch.device("mps")).eval()
+        style = torch.rand((1, 512), dtype=torch.float32, device=torch.device("mps"))
         output = net([style], input_is_latent=False)
         assert output[0].shape == (1, 3, 32, 32)
         assert output[1] is None

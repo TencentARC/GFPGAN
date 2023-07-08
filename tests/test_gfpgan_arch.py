@@ -53,11 +53,11 @@ def test_stylegan2generatorsft():
             resample_kernel=(1, 3, 3, 1),
             lr_mlp=0.01,
             narrow=1,
-            sft_half=False).to(mps_device).eval()
-        style = torch.rand((1, 512), dtype=torch.float32, device=mps_device)
-        condition1 = torch.rand((1, 512, 8, 8), dtype=torch.float32, device=mps_device)
-        condition2 = torch.rand((1, 512, 16, 16), dtype=torch.float32, device=mps_device)
-        condition3 = torch.rand((1, 512, 32, 32), dtype=torch.float32, device=mps_device)
+            sft_half=False).to(torch.device("mps")).eval()
+        style = torch.rand((1, 512), dtype=torch.float32, device=torch.device("mps"))
+        condition1 = torch.rand((1, 512, 8, 8), dtype=torch.float32, device=torch.device("mps"))
+        condition2 = torch.rand((1, 512, 16, 16), dtype=torch.float32, device=torch.device("mps"))
+        condition3 = torch.rand((1, 512, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         conditions = [condition1, condition1, condition2, condition2, condition3, condition3]
         output = net([style], conditions)
         assert output[0].shape == (1, 3, 32, 32)
@@ -147,8 +147,8 @@ def test_gfpganv1():
             input_is_latent=False,
             different_w=False,
             narrow=1,
-            sft_half=True).to(mps_device).eval()
-        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=mps_device)
+            sft_half=True).to(torch.device("mps")).eval()
+        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         output = net(img)
         assert output[0].shape == (1, 3, 32, 32)
         assert len(output[1]) == 3
@@ -171,8 +171,8 @@ def test_gfpganv1():
             input_is_latent=False,
             different_w=True,
             narrow=1,
-            sft_half=True).to(mps_device).eval()
-        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=mps_device)
+            sft_half=True).to(torch.device("mps")).eval()
+        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         output = net(img)
         assert output[0].shape == (1, 3, 32, 32)
         assert len(output[1]) == 3
@@ -203,8 +203,8 @@ def test_facialcomponentdiscriminator():
         assert output[1][1].shape == (1, 256, 8, 8)
 
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
-        net = FacialComponentDiscriminator().to(mps_device).eval()
-        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=mps_device)
+        net = FacialComponentDiscriminator().to(torch.device("mps")).eval()
+        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         output = net(img)
         assert len(output) == 2
         assert output[0].shape == (1, 1, 8, 8)
@@ -255,11 +255,11 @@ def test_stylegan2generatorcsft():
     elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
         net = StyleGAN2GeneratorCSFT(
             out_size=32, num_style_feat=512, num_mlp=8, channel_multiplier=1, narrow=1, sft_half=False).to(
-            mps_device).eval()
-        style = torch.rand((1, 512), dtype=torch.float32, device=mps_device)
-        condition1 = torch.rand((1, 512, 8, 8), dtype=torch.float32, device=mps_device)
-        condition2 = torch.rand((1, 512, 16, 16), dtype=torch.float32, device=mps_device)
-        condition3 = torch.rand((1, 512, 32, 32), dtype=torch.float32, device=mps_device)
+            torch.device("mps")).eval()
+        style = torch.rand((1, 512), dtype=torch.float32, device=torch.device("mps"))
+        condition1 = torch.rand((1, 512, 8, 8), dtype=torch.float32, device=torch.device("mps"))
+        condition2 = torch.rand((1, 512, 16, 16), dtype=torch.float32, device=torch.device("mps"))
+        condition3 = torch.rand((1, 512, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         conditions = [condition1, condition1, condition2, condition2, condition3, condition3]
         output = net([style], conditions)
         assert output[0].shape == (1, 3, 32, 32)
@@ -343,9 +343,9 @@ def test_gfpganv1clean():
             input_is_latent=False,
             different_w=False,
             narrow=1,
-            sft_half=True).to(mps_device).eval()
+            sft_half=True).to(torch.device("mps")).eval()
 
-        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=mps_device)
+        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         output = net(img)
         assert output[0].shape == (1, 3, 32, 32)
         assert len(output[1]) == 3
@@ -366,8 +366,8 @@ def test_gfpganv1clean():
             input_is_latent=False,
             different_w=True,
             narrow=1,
-            sft_half=True).to(mps_device).eval()
-        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=mps_device)
+            sft_half=True).to(torch.device("mps")).eval()
+        img = torch.rand((1, 3, 32, 32), dtype=torch.float32, device=torch.device("mps"))
         output = net(img)
         assert output[0].shape == (1, 3, 32, 32)
         assert len(output[1]) == 3
