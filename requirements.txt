@@ -6,7 +6,7 @@ opencv-python
 pyyaml
 scipy
 tb-nightly
-torch>=1.7
+torch>=2.0
 torchvision
 tqdm
 yapf
