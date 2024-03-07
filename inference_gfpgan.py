@@ -123,10 +123,10 @@ def main():
         bg_upsampler=bg_upsampler)
 
     # ------------------------ restore ------------------------
+    print(f'Processing {len(img_list)} images...')
     for img_path in img_list:
         # read image
         img_name = os.path.basename(img_path)
-        print(f'Processing {img_name} ...')
         basename, ext = os.path.splitext(img_name)
         input_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
 
