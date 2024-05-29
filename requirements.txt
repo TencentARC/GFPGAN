@@ -5,7 +5,7 @@ numpy
 opencv-python
 pyyaml
 scipy
-tb-nightly
+tensorboard
 torch>=1.7
 torchvision
 tqdm
