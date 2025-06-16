@@ -1,12 +1,16 @@
+# Минимально проверенные совместимые версии
+torch==2.0.1
+torchvision==0.15.2
+
+# Остальные зависимости
 basicsr>=1.4.2
 facexlib>=0.2.5
 lmdb
-numpy
+numpy<2
 opencv-python
 pyyaml
 scipy
 tb-nightly
-torch>=1.7
-torchvision
 tqdm
 yapf
+flask
