@@ -29,7 +29,7 @@ class GFPGANer():
         bg_upsampler (nn.Module): The upsampler for the background. Default: None.
     """
 
-    def __init__(self, model_path, upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=None, device=None):
+    def __init__(self, model_path, upscale=2, arch='clean', channel_multiplier=2, bg_upsampler=None, device=None, model_rootpath='gfpgan/weights'):
         self.upscale = upscale
         self.bg_upsampler = bg_upsampler
 
@@ -84,7 +84,7 @@ class GFPGANer():
             save_ext='png',
             use_parse=True,
             device=self.device,
-            model_rootpath='gfpgan/weights')
+            model_rootpath=model_rootpath)
 
         if model_path.startswith('https://'):
             model_path = load_file_from_url(
