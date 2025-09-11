@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+packages = ["gfpgan"]
+
+[project]
+name = "gfpgan"
+version = "1.3.8"
+authors = [
+  { name="Xintao Wang", email="xintao.wang@outlook.com" },
+]
+description = "GFPGAN aims at developing Practical Algorithms for Real-world Face Restoration"
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license = {text = "Apache-2.0"}
+
+dependencies = [
+    "basicsr", "facexlib", "lmdb", "numpy", "opencv-python", "pyyaml",
+    "scipy", "tb-nightly", "torch", "torchvision", "tqdm", "yapf", "cython"
+]
+
+[project.urls]
+Homepage = "github.com/Disty0/GFPGAN"
+Issues = "https://github.com/TencentARC/GFPGAN/issues"
