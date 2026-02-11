@@ -161,7 +161,7 @@ class GFPGANModel(BaseModel):
         }]
         optim_type = train_opt['optim_g'].pop('type')
         lr = train_opt['optim_g']['lr'] * net_g_reg_ratio
-        betas = (0**net_g_reg_ratio, 0.99**net_g_reg_ratio)
+        betas = (0.0**net_g_reg_ratio, 0.99**net_g_reg_ratio)
         self.optimizer_g = self.get_optimizer(optim_type, optim_params_g, lr, betas=betas)
         self.optimizers.append(self.optimizer_g)
 
@@ -176,7 +176,7 @@ class GFPGANModel(BaseModel):
         }]
         optim_type = train_opt['optim_d'].pop('type')
         lr = train_opt['optim_d']['lr'] * net_d_reg_ratio
-        betas = (0**net_d_reg_ratio, 0.99**net_d_reg_ratio)
+        betas = (0.0**net_d_reg_ratio, 0.99**net_d_reg_ratio)
         self.optimizer_d = self.get_optimizer(optim_type, optim_params_d, lr, betas=betas)
         self.optimizers.append(self.optimizer_d)
 
