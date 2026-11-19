@@ -49,7 +49,8 @@ def main():
     # ------------------------ input & output ------------------------
     if args.input.endswith('/'):
         args.input = args.input[:-1]
-    if os.path.isfile(args.input):
+    single_image = os.path.isfile(args.input)
+    if single_image:
         img_list = [args.input]
     else:
         img_list = sorted(glob.glob(os.path.join(args.input, '*')))
@@ -129,6 +130,11 @@ def main():
         print(f'Processing {img_name} ...')
         basename, ext = os.path.splitext(img_name)
         input_img = cv2.imread(img_path, cv2.IMREAD_COLOR)
+        if input_img is None:
+            if single_image:
+                raise ValueError(f"Could not read image: {img_path}")
+            print(f"Skipping unreadable image: {img_path}")
+            continue
 
         # restore faces and background if necessary
         cropped_faces, restored_faces, restored_img = restorer.enhance(
